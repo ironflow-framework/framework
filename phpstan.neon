@@ -1,0 +1,27 @@
+parameters:
+    level: 6
+    paths:
+        - src
+    excludePaths:
+        - src/Support/helpers.php
+    ignoreErrors:
+        # Missing generic value types in array params — project uses array<string,mixed> throughout,
+        # annotating every internal array at level 6 would bury real errors in noise.
+        - identifier: missingType.iterableValue
+        # PHP 8.4 implicit-nullable deprecation — batch-fix separately; not a logic bug.
+        - identifier: parameter.implicitlyNullable
+        # new static() is the Active Record ORM pattern — intentional in Model and traits.
+        - identifier: new.static
+        # PsySH is an optional dev dependency (psy/psysh); not installed in CI.
+        - identifier: class.notFound
+          path: src/Console/Commands/TinkerCommand.php
+        # SoftDeletes is an opt-in trait; PHPStan sees zero usage within the src tree.
+        - identifier: trait.unused
+        # ModelQueryBuilder returns Model|null; making it generic (TModel) is out of scope.
+        # The active-record static-return pattern is intentional.
+        - identifier: return.type
+          path: src/Database/Model.php
+        # sort() on string[] built from static:: calls — unresolvable in static context.
+        - identifier: argument.unresolvableType
+          path: src/Database/Model.php
+    reportUnmatchedIgnoredErrors: false

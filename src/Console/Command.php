@@ -78,6 +78,69 @@ abstract class Command extends SymfonyCommand
         $this->io->writeln($message);
     }
 
+    protected function newLine(int $count = 1): void
+    {
+        $this->io->newLine($count);
+    }
+
+    /**
+     * Run a labeled task. Prints "✓ title" on success or "✗ title" on failure.
+     * The callable should return false (or throw) to indicate failure.
+     */
+    protected function task(string $title, callable $task): bool
+    {
+        $this->io->write("  <fg=blue>…</> {$title}");
+        try {
+            $result = $task();
+            $ok = ($result !== false);
+        } catch (\Throwable) {
+            $ok = false;
+        }
+        $this->io->write("\r");
+        if ($ok) {
+            $this->io->writeln("  <info>✓</info> {$title}");
+        } else {
+            $this->io->writeln("  <error>✗</error> {$title}");
+        }
+        return $ok;
+    }
+
+    /**
+     * Print a two-column label → value line (dot-padded, like Laravel's `twoColumnDetail`).
+     */
+    protected function twoColumnDetail(string $left, string $right, string $style = 'fg=gray'): void
+    {
+        $width = 30;
+        $dots  = str_pad($left, $width, '.');
+        $this->io->writeln("  <{$style}>{$dots}</> <options=bold>{$right}</>");
+    }
+
+    /**
+     * Create a progress bar, invoke the callback with it, then finish.
+     * Usage: $this->progress(count($items), function($bar) use ($items) { … $bar->advance(); });
+     */
+    protected function progress(int $max, callable $callback): void
+    {
+        $bar = $this->io->createProgressBar($max);
+        $bar->start();
+        $callback($bar);
+        $bar->finish();
+        $this->io->newLine();
+    }
+
+    /**
+     * Return the argument value, or interactively ask the user if it is empty.
+     * Make the argument optional in the signature ({name?}) to enable this.
+     */
+    protected function argumentOrAsk(string $name, string $question, ?string $default = null): string
+    {
+        $value = (string) ($this->input->getArgument($name) ?? '');
+        if ($value !== '') {
+            return $value;
+        }
+        return $this->ask($question, $default);
+    }
+
     protected function ask(string $question, ?string $default = null): string
     {
         return (string) $this->io->ask($question, $default);

@@ -25,7 +25,7 @@ class QueryBuilder
     private bool $distinct = false;
 
     public function __construct(
-        private readonly Connection $connection,
+        protected readonly Connection $connection,
         private readonly string $table
     ) {
     }
@@ -253,14 +253,16 @@ class QueryBuilder
         return (float) $this->aggregate("AVG({$column})");
     }
 
-    public function min(string $column): mixed
+    public function min(string $column): float|null
     {
-        return $this->aggregate("MIN({$column})");
+        $v = $this->aggregate("MIN({$column})");
+        return $v !== null ? (float) $v : null;
     }
 
-    public function max(string $column): mixed
+    public function max(string $column): float|null
     {
-        return $this->aggregate("MAX({$column})");
+        $v = $this->aggregate("MAX({$column})");
+        return $v !== null ? (float) $v : null;
     }
 
     public function pluck(string $column): array

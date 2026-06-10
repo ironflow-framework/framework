@@ -8,12 +8,12 @@ use Ironflow\Console\Command;
 
 class MakeCommandCommand extends Command
 {
-    protected string $signature = 'make:command {name} {--module=}';
+    protected string $signature = 'make:command {name?} {--module=}';
     protected string $description = 'Create a new console command class';
 
     protected function handle(): int
     {
-        $name = (string) $this->argument('name');
+        $name = $this->argumentOrAsk('name', 'Command class name (e.g. SendReportCommand):');
         $module = $this->option('module');
 
         if ($module) {

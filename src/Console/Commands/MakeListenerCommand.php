@@ -8,12 +8,12 @@ use Ironflow\Console\Command;
 
 class MakeListenerCommand extends Command
 {
-    protected string $signature = 'make:listener {name} {--event=} {--module=}';
+    protected string $signature = 'make:listener {name?} {--event=} {--module=}';
     protected string $description = 'Create a new event listener class';
 
     protected function handle(): int
     {
-        $name = (string) $this->argument('name');
+        $name = $this->argumentOrAsk('name', 'Listener name (e.g. SendWelcomeEmail):');
         $event = $this->option('event') ?? 'SomeEvent';
         $module = $this->option('module');
 

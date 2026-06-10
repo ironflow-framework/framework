@@ -2,80 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Ironflow\Tests\Unit;
-
 use Ironflow\Container;
 use Ironflow\Exceptions\ContainerException;
-use PHPUnit\Framework\TestCase;
 
-class ContainerTest extends TestCase
-{
-    private Container $container;
-
-    protected function setUp(): void
-    {
-        $this->container = new Container();
-    }
-
-    public function test_bind_and_make_closure(): void
-    {
-        $this->container->bind('greeting', fn() => 'Hello IronFlow');
-        $this->assertSame('Hello IronFlow', $this->container->make('greeting'));
-    }
-
-    public function test_singleton_returns_same_instance(): void
-    {
-        $this->container->singleton('counter', fn() => new \stdClass());
-        $a = $this->container->make('counter');
-        $b = $this->container->make('counter');
-        $this->assertSame($a, $b);
-    }
-
-    public function test_instance_binds_existing_object(): void
-    {
-        $obj = new \stdClass();
-        $obj->value = 42;
-        $this->container->instance('thing', $obj);
-        $this->assertSame($obj, $this->container->make('thing'));
-    }
-
-    public function test_auto_resolve_concrete_class(): void
-    {
-        $result = $this->container->make(SimpleService::class);
-        $this->assertInstanceOf(SimpleService::class, $result);
-    }
-
-    public function test_auto_resolve_with_constructor_injection(): void
-    {
-        $result = $this->container->make(ServiceWithDep::class);
-        $this->assertInstanceOf(ServiceWithDep::class, $result);
-        $this->assertInstanceOf(SimpleService::class, $result->dep);
-    }
-
-    public function test_make_overrides_applied(): void
-    {
-        $override = new SimpleService();
-        $result = $this->container->make(ServiceWithDep::class, [
-            SimpleService::class => $override,
-        ]);
-        $this->assertSame($override, $result->dep);
-    }
-
-    public function test_bind_overwrites_previous(): void
-    {
-        $this->container->bind('val', fn() => 1);
-        $this->container->bind('val', fn() => 2);
-        $this->assertSame(2, $this->container->make('val'));
-    }
-
-    public function test_non_existent_abstract_throws(): void
-    {
-        $this->expectException(ContainerException::class);
-        $this->container->make('NonExistentClass_XYZ_ABC');
-    }
-}
-
-// ── Inline fixtures ───────────────────────────────────────────────────────────
+// ── Fixtures ──────────────────────────────────────────────────────────────────
 
 class SimpleService
 {
@@ -87,3 +17,55 @@ class ServiceWithDep
     {
     }
 }
+
+// ── Tests ─────────────────────────────────────────────────────────────────────
+
+beforeEach(function () {
+    $this->container = new Container();
+});
+
+test('bind and make closure', function () {
+    $this->container->bind('greeting', fn () => 'Hello IronFlow');
+    expect($this->container->make('greeting'))->toBe('Hello IronFlow');
+});
+
+test('singleton returns same instance', function () {
+    $this->container->singleton('counter', fn () => new stdClass());
+    $a = $this->container->make('counter');
+    $b = $this->container->make('counter');
+    expect($a)->toBe($b);
+});
+
+test('instance binds existing object', function () {
+    $obj = new stdClass();
+    $obj->value = 42;
+    $this->container->instance('thing', $obj);
+    expect($this->container->make('thing'))->toBe($obj);
+});
+
+test('auto resolve concrete class', function () {
+    expect($this->container->make(SimpleService::class))->toBeInstanceOf(SimpleService::class);
+});
+
+test('auto resolve with constructor injection', function () {
+    $result = $this->container->make(ServiceWithDep::class);
+    expect($result)->toBeInstanceOf(ServiceWithDep::class);
+    expect($result->dep)->toBeInstanceOf(SimpleService::class);
+});
+
+test('make overrides applied', function () {
+    $override = new SimpleService();
+    $result   = $this->container->make(ServiceWithDep::class, [SimpleService::class => $override]);
+    expect($result->dep)->toBe($override);
+});
+
+test('bind overwrites previous', function () {
+    $this->container->bind('val', fn () => 1);
+    $this->container->bind('val', fn () => 2);
+    expect($this->container->make('val'))->toBe(2);
+});
+
+test('non-existent abstract throws ContainerException', function () {
+    expect(fn () => $this->container->make('NonExistentClass_XYZ_ABC'))
+        ->toThrow(ContainerException::class);
+});

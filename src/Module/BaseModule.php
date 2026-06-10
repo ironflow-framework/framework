@@ -18,16 +18,28 @@ use Ironflow\Template\Engine;
 abstract class BaseModule
 {
     protected Container $container;
-    protected Router $router;
-    protected Dispatcher $events;
-    protected Engine $view;
 
     public function setContainer(Container $container): void
     {
         $this->container = $container;
-        $this->router = $container->make(Router::class);
-        $this->events = $container->make(Dispatcher::class);
-        $this->view = $container->make(Engine::class);
+    }
+
+    /** @return Router */
+    protected function getRouter(): Router
+    {
+        return $this->container->make(Router::class);
+    }
+
+    /** @return Dispatcher */
+    protected function getEvents(): Dispatcher
+    {
+        return $this->container->make(Dispatcher::class);
+    }
+
+    /** @return Engine */
+    protected function getView(): Engine
+    {
+        return $this->container->make(Engine::class);
     }
 
     /** Phase 1: register service bindings into the container. */
@@ -44,7 +56,7 @@ abstract class BaseModule
     public function loadRoutes(string $routesFile): void
     {
         if (is_file($routesFile)) {
-            $router = $this->router;
+            $router = $this->getRouter();
             require $routesFile;
         }
     }
@@ -52,8 +64,8 @@ abstract class BaseModule
     /** Register a Twig namespace for this module's Views directory. */
     public function registerViewNamespace(string $namespace, string $path): void
     {
-        if (is_dir($path)) {
-            $this->view->addNamespace($namespace, $path);
+        if (is_dir($path) && $this->container->has(Engine::class)) {
+            $this->getView()->addNamespace($namespace, $path);
         }
     }
 }

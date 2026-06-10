@@ -23,6 +23,7 @@ use Ironflow\Template\Engine as TemplateEngine;
 use Ironflow\Database\Connection;
 use Ironflow\Validation\ValidatorFactory;
 use Dotenv\Dotenv;
+use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
@@ -148,7 +149,7 @@ class Application
         $this->config = new ConfigRepository();
         $this->container->instance(ConfigRepository::class, $this->config);
 
-        // Logger (Monolog-backed)
+        // Logger (Monolog-backed) — also bound as PSR-3 LoggerInterface
         $this->container->singleton(Logger::class, function () {
             return new Logger(
                 $this->config->get('app.name', 'IronFlow'),
@@ -157,6 +158,7 @@ class Application
                 (bool) $this->config->get('app.debug', false)
             );
         });
+        $this->container->bind(LoggerInterface::class, fn() => $this->container->make(Logger::class));
 
         // Event Dispatcher
         $this->container->singleton(Dispatcher::class, fn() => new Dispatcher($this->container));
@@ -174,9 +176,11 @@ class Application
             );
         });
 
-        // Database Connection (lazy)
+        // Database Connection (lazy) — query log enabled so RequestLogger can count queries
         $this->container->singleton(Connection::class, function () {
-            return new Connection($this->config->get('database', []));
+            $conn = new Connection($this->config->get('database', []));
+            $conn->enableQueryLog();
+            return $conn;
         });
 
         // Module Manager

@@ -11,17 +11,12 @@ class Hash
 {
     public static function make(string $password): string
     {
-        $hash = password_hash($password, PASSWORD_ARGON2ID, [
+        // password_hash() returns string in PHP 8+ (never false — throws Error on failure).
+        return password_hash($password, PASSWORD_ARGON2ID, [
             'memory_cost' => 65536,
             'time_cost' => 4,
             'threads' => 1,
         ]);
-
-        if ($hash === false) {
-            throw new \RuntimeException('Password hashing failed.');
-        }
-
-        return $hash;
     }
 
     public static function verify(string $password, string $hash): bool

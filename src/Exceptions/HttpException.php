@@ -15,7 +15,7 @@ class HttpException extends RuntimeException
     public function __construct(
         private readonly int $statusCode,
         string $message = '',
-        \Throwable $previous = null,
+        ?\Throwable $previous = null,
         private readonly array $headers = []
     ) {
         parent::__construct($message ?: $this->defaultMessage(), $statusCode, $previous);

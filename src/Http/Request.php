@@ -62,7 +62,13 @@ class Request extends SymfonyRequest
     /** Input from request body or query string. */
     public function input(string $key, mixed $default = null): mixed
     {
-        return $this->request->get($key, $this->query->get($key, $default));
+        if ($this->request->has($key)) {
+            return $this->request->get($key);
+        }
+        if ($this->query->has($key)) {
+            return $this->query->get($key);
+        }
+        return $default;
     }
 
     public function all(): array
@@ -117,7 +123,7 @@ class Request extends SymfonyRequest
         return $this->validatedData;
     }
 
-    public function validated(): array
+    public function validated(): mixed
     {
         return $this->validatedData ?? [];
     }

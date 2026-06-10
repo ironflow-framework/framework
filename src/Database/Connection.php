@@ -95,7 +95,15 @@ class Connection
 
     public function transaction(callable $callback): mixed
     {
-        return $this->dbal->transactional($callback);
+        $this->dbal->beginTransaction();
+        try {
+            $result = $callback($this);
+            $this->dbal->commit();
+            return $result;
+        } catch (\Throwable $e) {
+            $this->dbal->rollBack();
+            throw $e;
+        }
     }
 
     public function beginTransaction(): void
@@ -115,6 +123,7 @@ class Connection
 
     // ─────────────────────── Schema ──────────────────────────────────
 
+    /** @return \Doctrine\DBAL\Schema\AbstractSchemaManager<\Doctrine\DBAL\Platforms\AbstractPlatform> */
     public function getSchemaManager(): \Doctrine\DBAL\Schema\AbstractSchemaManager
     {
         return $this->dbal->createSchemaManager();
@@ -131,6 +140,16 @@ class Connection
     }
 
     // ─────────────────────── Query log ───────────────────────────────
+
+    public function enableQueryLog(): void
+    {
+        $this->logging = true;
+    }
+
+    public function disableQueryLog(): void
+    {
+        $this->logging = false;
+    }
 
     public function getQueryLog(): array
     {

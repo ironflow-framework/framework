@@ -8,12 +8,12 @@ use Ironflow\Console\Command;
 
 class MakeModelCommand extends Command
 {
-    protected string $signature = 'make:model {name} {--module=} {--migration} {--factory}';
+    protected string $signature = 'make:model {name?} {--module=} {--migration} {--factory}';
     protected string $description = 'Create a new model class';
 
     protected function handle(): int
     {
-        $name = (string) $this->argument('name');
+        $name = $this->argumentOrAsk('name', 'Model name (e.g. Post):');
         $module = $this->option('module');
 
         if ($module) {

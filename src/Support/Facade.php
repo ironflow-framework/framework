@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Ironflow\Support;
 
 use Ironflow\Container;
-use RuntimeException;
 
 /**
  * Abstract Facade. Each concrete facade returns an accessor string (class name
@@ -29,13 +28,7 @@ abstract class Facade
 
     public static function __callStatic(string $method, array $args): mixed
     {
-        $instance = static::getFacadeRoot();
-
-        if ($instance === null) {
-            throw new RuntimeException('Facade root has not been resolved.');
-        }
-
-        return $instance->$method(...$args);
+        return static::getFacadeRoot()->$method(...$args);
     }
 
     protected static function getFacadeRoot(): object

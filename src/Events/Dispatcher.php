@@ -43,20 +43,21 @@ class Dispatcher
     }
 
     /**
-     * Dispatch and return whether any listener stopped propagation.
+     * Dispatch and return the first non-null result from any listener.
+     * Returns null when all listeners return null, false when one stops propagation.
      */
-    public function until(object $event): bool
+    public function until(object $event): mixed
     {
         $class = get_class($event);
 
         foreach ($this->getListenersForEvent($class) as $listener) {
             $result = $this->callListener($listener, $event);
-            if ($result === false) {
-                return false;
+            if ($result !== null) {
+                return $result;
             }
         }
 
-        return true;
+        return null;
     }
 
     public function hasListeners(string $eventClass): bool

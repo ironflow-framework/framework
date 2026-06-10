@@ -30,6 +30,13 @@ abstract class Factory
         return $clone;
     }
 
+    public function for(string $modelClass): static
+    {
+        $clone = clone $this;
+        $clone->modelClass = $modelClass;
+        return $clone;
+    }
+
     public function state(array $attributes): static
     {
         $clone = clone $this;

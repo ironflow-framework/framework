@@ -8,12 +8,12 @@ use Ironflow\Console\Command;
 
 class MakeServiceCommand extends Command
 {
-    protected string $signature = 'make:service {name} {--module=}';
+    protected string $signature = 'make:service {name?} {--module=}';
     protected string $description = 'Create a new service class';
 
     protected function handle(): int
     {
-        $name = (string) $this->argument('name');
+        $name = $this->argumentOrAsk('name', 'Service name (e.g. PostService):');
         $module = $this->option('module');
 
         if ($module) {

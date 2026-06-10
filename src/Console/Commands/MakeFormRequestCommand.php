@@ -8,12 +8,12 @@ use Ironflow\Console\Command;
 
 class MakeFormRequestCommand extends Command
 {
-    protected string $signature = 'make:form-request {name : Class name (e.g. StorePostRequest)} {--module= : Target module}';
+    protected string $signature = 'make:form-request {name? : Class name (e.g. StorePostRequest)} {--module= : Target module}';
     protected string $description = 'Create a new FormRequest class';
 
     public function handle(): int
     {
-        $name = (string) $this->argument('name');
+        $name = $this->argumentOrAsk('name', 'FormRequest name (e.g. StorePostRequest):');
         $module = $this->option('module');
 
         [$namespace, $dir] = $this->resolveTarget($name, (string) $module);

@@ -10,7 +10,7 @@ use Ironflow\Http\Response;
 use Ironflow\Template\Engine;
 use Ironflow\Validation\ValidationException;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
+
 use Throwable;
 
 /**
@@ -29,7 +29,7 @@ class Handler
     ) {
     }
 
-    public function render(Request $request, Throwable $e): Response
+    public function render(Request $request, Throwable $e): Response|JsonResponse
     {
         // ValidationException: 422 JSON or redirect-back with flashed errors (web)
         if ($e instanceof ValidationException) {
@@ -51,7 +51,7 @@ class Handler
         return $this->renderErrorPage($e, $status);
     }
 
-    private function renderValidationError(Request $request, ValidationException $e): Response
+    private function renderValidationError(Request $request, ValidationException $e): Response|JsonResponse
     {
         if ($request->wantsJson()) {
             return new JsonResponse(
@@ -99,20 +99,24 @@ class Handler
 
         try {
             $html = $this->view->render($template, [
-                'code' => $status,
+                'code'    => $status,
                 'message' => $e->getMessage(),
             ]);
-            return Response::view($html, $status);
+            return new Response($html, $status, ['Content-Type' => 'text/html; charset=UTF-8']);
         } catch (Throwable) {
-            return Response::view($this->fallbackHtml($status, $e->getMessage()), $status);
+            return new Response(
+                $this->fallbackHtml($status, $e->getMessage()),
+                $status,
+                ['Content-Type' => 'text/html; charset=UTF-8']
+            );
         }
     }
 
     private function renderDebugPage(Request $request, Throwable $e, int $status): Response
     {
         $frames = $e->getTrace();
-        $html = $this->buildDebugHtml($request, $e, $status, $frames);
-        return Response::view($html, $status);
+        $html   = $this->buildDebugHtml($request, $e, $status, $frames);
+        return new Response($html, $status, ['Content-Type' => 'text/html; charset=UTF-8']);
     }
 
     private function buildDebugHtml(Request $request, Throwable $e, int $status, array $frames): string

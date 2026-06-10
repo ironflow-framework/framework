@@ -2,11 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Ironflow\Tests\Unit;
-
 use Ironflow\Container;
 use Ironflow\Events\Dispatcher;
-use PHPUnit\Framework\TestCase;
+
+// ── Fixtures ──────────────────────────────────────────────────────────────────
 
 final class SomethingHappened
 {
@@ -19,73 +18,59 @@ final class SomethingElse
 {
 }
 
-class EventDispatcherTest extends TestCase
-{
-    private Dispatcher $dispatcher;
+// ── Tests ─────────────────────────────────────────────────────────────────────
 
-    protected function setUp(): void
-    {
-        $this->dispatcher = new Dispatcher(new Container());
-    }
+beforeEach(function () {
+    $this->dispatcher = new Dispatcher(new Container());
+});
 
-    public function test_closure_listener_receives_event(): void
-    {
-        $received = null;
-        $this->dispatcher->listen(SomethingHappened::class, function (SomethingHappened $e) use (&$received) {
-            $received = $e->payload;
-        });
-        $this->dispatcher->dispatch(new SomethingHappened('hello'));
-        $this->assertSame('hello', $received);
-    }
+test('closure listener receives event', function () {
+    $received = null;
+    $this->dispatcher->listen(SomethingHappened::class, function (SomethingHappened $e) use (&$received) {
+        $received = $e->payload;
+    });
+    $this->dispatcher->dispatch(new SomethingHappened('hello'));
+    expect($received)->toBe('hello');
+});
 
-    public function test_multiple_listeners_all_called(): void
-    {
-        $log = [];
-        $this->dispatcher->listen(SomethingHappened::class, function () use (&$log) {
-            $log[] = 'a'; });
-        $this->dispatcher->listen(SomethingHappened::class, function () use (&$log) {
-            $log[] = 'b'; });
-        $this->dispatcher->dispatch(new SomethingHappened('x'));
-        $this->assertSame(['a', 'b'], $log);
-    }
+test('multiple listeners all called', function () {
+    $log = [];
+    $this->dispatcher->listen(SomethingHappened::class, function () use (&$log) { $log[] = 'a'; });
+    $this->dispatcher->listen(SomethingHappened::class, function () use (&$log) { $log[] = 'b'; });
+    $this->dispatcher->dispatch(new SomethingHappened('x'));
+    expect($log)->toBe(['a', 'b']);
+});
 
-    public function test_listener_returning_false_stops_propagation(): void
-    {
-        $log = [];
-        $this->dispatcher->listen(SomethingHappened::class, function () use (&$log) {
-            $log[] = 'first';
-            return false;
-        });
-        $this->dispatcher->listen(SomethingHappened::class, function () use (&$log) {
-            $log[] = 'second';
-        });
-        $this->dispatcher->dispatch(new SomethingHappened('stop'));
-        $this->assertSame(['first'], $log);
-    }
+test('listener returning false stops propagation', function () {
+    $log = [];
+    $this->dispatcher->listen(SomethingHappened::class, function () use (&$log) {
+        $log[] = 'first';
+        return false;
+    });
+    $this->dispatcher->listen(SomethingHappened::class, function () use (&$log) {
+        $log[] = 'second';
+    });
+    $this->dispatcher->dispatch(new SomethingHappened('stop'));
+    expect($log)->toBe(['first']);
+});
 
-    public function test_until_returns_first_non_null_result(): void
-    {
-        $this->dispatcher->listen(SomethingHappened::class, fn() => null);
-        $this->dispatcher->listen(SomethingHappened::class, fn() => 'found');
-        $this->dispatcher->listen(SomethingHappened::class, fn() => 'too late');
+test('until returns first non-null result', function () {
+    $this->dispatcher->listen(SomethingHappened::class, fn () => null);
+    $this->dispatcher->listen(SomethingHappened::class, fn () => 'found');
+    $this->dispatcher->listen(SomethingHappened::class, fn () => 'too late');
+    expect($this->dispatcher->until(new SomethingHappened('q')))->toBe('found');
+});
 
-        $result = $this->dispatcher->until(new SomethingHappened('q'));
-        $this->assertSame('found', $result);
-    }
+test('no listener dispatches silently', function () {
+    $this->dispatcher->dispatch(new SomethingElse());
+    expect(true)->toBeTrue();
+});
 
-    public function test_no_listener_dispatches_silently(): void
-    {
-        $this->dispatcher->dispatch(new SomethingElse());
-        $this->assertTrue(true);
-    }
-
-    public function test_dispatch_unrelated_event_not_triggered(): void
-    {
-        $called = false;
-        $this->dispatcher->listen(SomethingHappened::class, function () use (&$called) {
-            $called = true;
-        });
-        $this->dispatcher->dispatch(new SomethingElse());
-        $this->assertFalse($called);
-    }
-}
+test('unrelated event does not trigger listener', function () {
+    $called = false;
+    $this->dispatcher->listen(SomethingHappened::class, function () use (&$called) {
+        $called = true;
+    });
+    $this->dispatcher->dispatch(new SomethingElse());
+    expect($called)->toBeFalse();
+});

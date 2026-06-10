@@ -64,15 +64,19 @@ class Route
         return $this->middlewares;
     }
 
-    /** Try to match the given URI. Returns extracted params or null. */
+    /** Try to match the given URI. Returns extracted params (may be empty) or null on no match. */
     public function match(string $uri): ?array
     {
         if (!preg_match($this->compiledPattern, $uri, $matches)) {
             return null;
         }
 
-        // Filter out numeric keys from preg_match
-        return array_filter($matches, fn($k) => !is_int($k), ARRAY_FILTER_USE_KEY);
+        // Keep only named captures with non-empty values (empty = unmatched optional group).
+        return array_filter(
+            $matches,
+            fn($v, $k) => !is_int($k) && $v !== '',
+            ARRAY_FILTER_USE_BOTH
+        );
     }
 
     /** Generate a URL for this route given the parameter values. */
@@ -101,13 +105,15 @@ class Route
 
     private function compile(string $uri): string
     {
-        // Escape forward slashes for the regex delimiter
-        $pattern = preg_replace_callback('/\{(\w+)(\?)?\}/', function ($m) {
-            $name = $m[1];
-            $optional = isset($m[2]) && $m[2] === '?';
-            $regex = $this->wheres[$name] ?? '[^/]+';
+        // Consume the preceding '/' together with the parameter so that optional
+        // params don't leave a dangling required slash in the pattern.
+        $pattern = preg_replace_callback('/\/\{(\w+)(\?)?\}/', function ($m) {
+            $name    = $m[1];
+            $optional = !empty($m[2]);
+            $regex   = $this->wheres[$name] ?? '[^/]+';
             $segment = "(?P<{$name}>{$regex})";
-            return $optional ? "(?:/{$segment})?" : $segment;
+            // Optional: include the leading '/' inside the group so it becomes truly optional.
+            return $optional ? "(?:/{$segment})?" : "/{$segment}";
         }, $uri);
 
         $pattern = str_replace('/', '\/', (string) $pattern);
