@@ -11,7 +11,7 @@ use Ironflow\Console\Kernel as ConsoleKernel;
 use Ironflow\Container;
 use Ironflow\Events\Dispatcher;
 use Ironflow\Exceptions\Handler as ExceptionHandler;
-use Ironflow\Facades\Facade;
+use Ironflow\Support\Facade;
 use Ironflow\Http\Kernel as HttpKernel;
 use Ironflow\Http\Request;
 use Ironflow\Logging\Logger;
