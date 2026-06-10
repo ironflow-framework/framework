@@ -75,6 +75,19 @@ class RouteCollection
 
     public function getByName(string $name): ?Route
     {
+        if (isset($this->named[$name])) {
+            return $this->named[$name];
+        }
+
+        // Lazy load names since Route::name() might be called after add()
+        foreach ($this->routes as $routes) {
+            foreach ($routes as $route) {
+                if ($rName = $route->getName()) {
+                    $this->named[$rName] = $route;
+                }
+            }
+        }
+
         return $this->named[$name] ?? null;
     }
 
