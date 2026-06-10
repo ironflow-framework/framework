@@ -31,7 +31,7 @@ class Kernel
         try {
             $manager = $this->container->make(ModuleManager::class);
             foreach ($manager->getAllCommands() as $commandClass) {
-                $this->console->add($this->container->make($commandClass));
+                $this->console->addCommand($this->container->make($commandClass));
             }
         } catch (\Throwable) {
         }
@@ -41,7 +41,7 @@ class Kernel
 
     public function add(Command $command): void
     {
-        $this->console->add($command);
+        $this->console->addCommand($command);
     }
 
     private function registerFrameworkCommands(): void
@@ -79,8 +79,9 @@ class Kernel
         foreach ($commands as $class) {
             try {
                 $cmd = $this->container->make($class);
-                $this->console->add($cmd);
+                $this->console->addCommand($cmd);
             } catch (\Throwable $e) {
+                echo $e->getMessage() . "\n";
                 // Skip commands that can't be instantiated (missing deps)
             }
         }
