@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Core;
+namespace Ironflow;
 
 use Ironflow\Auth\AuthManager;
 use Ironflow\Cache\CacheManager;
