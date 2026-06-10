@@ -22,6 +22,8 @@ abstract class Command extends SymfonyCommand
     protected string $signature = '';
     protected string $description = '';
     protected SymfonyStyle $io;
+    protected InputInterface $input;
+    protected OutputInterface $output;
 
     protected function configure(): void
     {
@@ -35,6 +37,8 @@ abstract class Command extends SymfonyCommand
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $this->input = $input;
+        $this->output = $output;
         $this->io = new SymfonyStyle($input, $output);
         return $this->handle() ?? self::SUCCESS;
     }
@@ -45,12 +49,12 @@ abstract class Command extends SymfonyCommand
 
     protected function argument(string $name): mixed
     {
-        return $this->io->getInput()->getArgument($name);
+        return $this->input->getArgument($name);
     }
 
     protected function option(string $name): mixed
     {
-        return $this->io->getInput()->getOption($name);
+        return $this->input->getOption($name);
     }
 
     protected function info(string $message): void

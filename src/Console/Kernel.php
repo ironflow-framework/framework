@@ -81,7 +81,6 @@ class Kernel
                 $cmd = $this->container->make($class);
                 $this->console->addCommand($cmd);
             } catch (\Throwable $e) {
-                echo $e->getMessage() . "\n";
                 // Skip commands that can't be instantiated (missing deps)
             }
         }
