@@ -1,0 +1,23 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Core\Middleware;
+
+use Core\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+class TrimStrings
+{
+    private array $except = ['password', 'password_confirmation', 'current_password'];
+
+    public function handle(Request $request, callable $next): Response
+    {
+        foreach ($request->request->all() as $key => $value) {
+            if (!in_array($key, $this->except, true) && is_string($value)) {
+                $request->request->set($key, trim($value));
+            }
+        }
+        return $next($request);
+    }
+}
