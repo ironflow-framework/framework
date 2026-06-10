@@ -8,12 +8,12 @@ use Ironflow\Console\Command;
 
 class MakeControllerCommand extends Command
 {
-    protected string $signature = 'make:controller {name} {--module=} {--resource}';
+    protected string $signature = 'make:controller {name?} {--module=} {--resource}';
     protected string $description = 'Create a new controller class';
 
     protected function handle(): int
     {
-        $name = (string) $this->argument('name');
+        $name = $this->argumentOrAsk('name', 'Controller name (e.g. PostController):');
         $module = $this->option('module');
         $resource = (bool) $this->option('resource');
 

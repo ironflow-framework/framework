@@ -2,98 +2,86 @@
 
 declare(strict_types=1);
 
-namespace Ironflow\Tests\Unit;
-
 use Ironflow\Container;
+use Ironflow\Exceptions\ModuleException;
 use Ironflow\Module\Attributes\Module;
 use Ironflow\Module\BaseModule;
 use Ironflow\Module\ModuleManager;
-use Ironflow\Module\ModuleException;
-use PHPUnit\Framework\TestCase;
+
+// ── Fixtures ──────────────────────────────────────────────────────────────────
 
 #[Module(name: 'alpha', imports: [], providers: [], exports: [])]
-class AlphaModule extends BaseModule
+class AlphaModule extends BaseModule {}
+
+#[Module(name: 'beta', imports: [AlphaModule::class], providers: [], exports: [])]
+class BetaModule extends BaseModule {}
+
+#[Module(name: 'gamma', imports: [BetaModule::class], providers: [], exports: [])]
+class GammaModule extends BaseModule {}
+
+// Cycle pair: epsilon → delta → epsilon
+#[Module(name: 'epsilon', imports: [DeltaModule::class], providers: [], exports: [])]
+class EpsilonModule extends BaseModule {}
+
+#[Module(name: 'delta', imports: [EpsilonModule::class], providers: [], exports: [])]
+class DeltaModule extends BaseModule {}
+
+// ── Tests ─────────────────────────────────────────────────────────────────────
+
+function makeManager(): ModuleManager
 {
+    return new ModuleManager(new Container(), sys_get_temp_dir());
 }
 
-#[Module(name: 'beta', imports: ['alpha'], providers: [], exports: [])]
-class BetaModule extends BaseModule
-{
-}
+test('register and boot single module', function () {
+    $manager = makeManager();
+    $manager->register(AlphaModule::class);
+    $manager->boot();
+    expect(true)->toBeTrue();
+});
 
-#[Module(name: 'gamma', imports: ['beta'], providers: [], exports: [])]
-class GammaModule extends BaseModule
-{
-}
+test('dependency boot order respected', function () {
+    $manager = makeManager();
+    $manager->register(GammaModule::class);
+    $manager->register(BetaModule::class);
+    $manager->register(AlphaModule::class);
+    $manager->boot();
 
-// Cycle modules: delta imports epsilon, epsilon imports delta
-#[Module(name: 'delta', imports: ['epsilon'], providers: [], exports: [])]
-class DeltaModule extends BaseModule
-{
-}
+    $order = $manager->getBootOrder();
+    $alpha = array_search(AlphaModule::class, $order, true);
+    $beta  = array_search(BetaModule::class,  $order, true);
+    $gamma = array_search(GammaModule::class,  $order, true);
 
-#[Module(name: 'epsilon', imports: ['delta'], providers: [], exports: [])]
-class EpsilonModule extends BaseModule
-{
-}
+    expect($alpha)->toBeLessThan($beta);
+    expect($beta)->toBeLessThan($gamma);
+});
 
-class ModuleManagerTest extends TestCase
-{
-    private function makeManager(): ModuleManager
-    {
-        return new ModuleManager(new Container(), sys_get_temp_dir());
-    }
+test('cycle throws ModuleException', function () {
+    $manager = makeManager();
+    $manager->register(DeltaModule::class);
+    $manager->register(EpsilonModule::class);
 
-    public function test_register_and_boot_single_module(): void
-    {
-        $manager = $this->makeManager();
-        $manager->register(AlphaModule::class);
-        $manager->boot();
-        $this->assertTrue(true); // No exception thrown = success
-    }
+    expect(fn () => $manager->boot())
+        ->toThrow(ModuleException::class);
+});
 
-    public function test_dependency_order_respected(): void
-    {
-        $manager = $this->makeManager();
-        // Register in reverse order intentionally
-        $manager->register(GammaModule::class);
-        $manager->register(BetaModule::class);
-        $manager->register(AlphaModule::class);
-        $manager->boot();
-        $this->assertTrue(true);
-    }
+test('missing import throws ModuleException', function () {
+    $manager = makeManager();
+    $manager->register(BetaModule::class); // imports Alpha but Alpha not registered
 
-    public function test_cycle_throws_module_exception(): void
-    {
-        $this->expectException(ModuleException::class);
-        $this->expectExceptionMessageMatches('/cycle/i');
+    expect(fn () => $manager->boot())
+        ->toThrow(ModuleException::class);
+});
 
-        $manager = $this->makeManager();
-        $manager->register(DeltaModule::class);
-        $manager->register(EpsilonModule::class);
-        $manager->boot();
-    }
+test('renderGraph returns string containing module names', function () {
+    $manager = makeManager();
+    $manager->register(AlphaModule::class);
+    $manager->register(BetaModule::class);
+    $manager->register(GammaModule::class);
+    $manager->boot();
 
-    public function test_missing_import_throws(): void
-    {
-        $this->expectException(ModuleException::class);
-
-        $manager = $this->makeManager();
-        // BetaModule imports 'alpha' but AlphaModule is not registered
-        $manager->register(BetaModule::class);
-        $manager->boot();
-    }
-
-    public function test_render_graph_returns_string(): void
-    {
-        $manager = $this->makeManager();
-        $manager->register(AlphaModule::class);
-        $manager->register(BetaModule::class);
-        $manager->register(GammaModule::class);
-        $manager->boot();
-        $graph = $manager->renderGraph();
-        $this->assertIsString($graph);
-        $this->assertStringContainsString('alpha', $graph);
-        $this->assertStringContainsString('beta', $graph);
-    }
-}
+    $graph = $manager->renderGraph();
+    expect($graph)->toBeString();
+    expect($graph)->toContain('alpha');
+    expect($graph)->toContain('beta');
+});

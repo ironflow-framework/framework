@@ -8,12 +8,12 @@ use Ironflow\Console\Command;
 
 class MakeFactoryCommand extends Command
 {
-    protected string $signature = 'make:factory {name} {--module=}';
+    protected string $signature = 'make:factory {name?} {--module=}';
     protected string $description = 'Create a new model factory class';
 
     protected function handle(): int
     {
-        $name = (string) $this->argument('name');
+        $name = $this->argumentOrAsk('name', 'Factory name (e.g. PostFactory):');
         $module = $this->option('module');
 
         $path = $module

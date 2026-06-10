@@ -8,12 +8,12 @@ use Ironflow\Console\Command;
 
 class MakeMiddlewareCommand extends Command
 {
-    protected string $signature = 'make:middleware {name}';
+    protected string $signature = 'make:middleware {name?}';
     protected string $description = 'Create a new middleware class';
 
     protected function handle(): int
     {
-        $name = (string) $this->argument('name');
+        $name = $this->argumentOrAsk('name', 'Middleware name (e.g. AuthMiddleware):');
         $path = base_path("app/Middleware/{$name}.php");
         @mkdir(dirname($path), 0755, true);
 

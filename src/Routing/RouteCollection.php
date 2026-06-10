@@ -31,7 +31,8 @@ class RouteCollection
     public function setName(string $method, string $name): void
     {
         $method = strtoupper($method);
-        $last = end($this->routes[$method] ?? []);
+        $routes = $this->routes[$method] ?? [];
+        $last = end($routes);
         if ($last instanceof Route) {
             $last->name($name);
             $this->named[$name] = $last;

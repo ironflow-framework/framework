@@ -8,12 +8,12 @@ use Ironflow\Console\Command;
 
 class MakeSeederCommand extends Command
 {
-    protected string $signature = 'make:seeder {name} {--module=}';
+    protected string $signature = 'make:seeder {name?} {--module=}';
     protected string $description = 'Create a new database seeder class';
 
     protected function handle(): int
     {
-        $name = (string) $this->argument('name');
+        $name = $this->argumentOrAsk('name', 'Seeder name (e.g. UserSeeder):');
         $module = $this->option('module');
 
         $path = $module

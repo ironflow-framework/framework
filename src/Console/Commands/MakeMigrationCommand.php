@@ -8,12 +8,12 @@ use Ironflow\Console\Command;
 
 class MakeMigrationCommand extends Command
 {
-    protected string $signature = 'make:migration {name} {--module=}';
+    protected string $signature = 'make:migration {name?} {--module=}';
     protected string $description = 'Create a new migration file';
 
     protected function handle(): int
     {
-        $name = str_replace(' ', '_', strtolower((string) $this->argument('name')));
+        $name = str_replace(' ', '_', strtolower($this->argumentOrAsk('name', 'Migration name (e.g. create_posts_table):')));
         $module = $this->option('module');
         $stamp = date('Y_m_d_His');
         $file = "{$stamp}_{$name}.php";

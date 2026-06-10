@@ -110,7 +110,7 @@ class Paginator implements JsonSerializable
 
     private function pageUrl(int $page, string $param): string
     {
-        $query = $_GET ?? [];
+        $query = $_GET;
         $query[$param] = $page;
         return '?' . http_build_query($query);
     }

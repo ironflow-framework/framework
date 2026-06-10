@@ -4,19 +4,14 @@ declare(strict_types=1);
 
 namespace Ironflow\Cache;
 
-use Ironflow\Application;
-
 /**
  * Simple file-based cache. Uses APCu when available, otherwise stores
  * serialized PHP in storage/cache/app/.
  */
 class CacheManager
 {
-    private string $path;
-
-    public function __construct()
+    public function __construct(private readonly string $path)
     {
-        $this->path = Application::getInstance()->path('cache', 'app');
         if (!is_dir($this->path)) {
             mkdir($this->path, 0755, true);
         }

@@ -68,7 +68,7 @@ class JwtGuard implements GuardInterface
 
     public function id(): int|string|null
     {
-        return $this->user()?->id ?? null;
+        return $this->user()?->id;
     }
 
     public function attempt(array $credentials): bool

@@ -8,12 +8,12 @@ use Ironflow\Console\Command;
 
 class MakeComponentCommand extends Command
 {
-    protected string $signature = 'make:component {name : Component name in PascalCase (e.g. Alert)} {--module= : Target module}';
+    protected string $signature = 'make:component {name? : Component name in PascalCase (e.g. Alert)} {--module= : Target module}';
     protected string $description = 'Create a new view Component class and its Twig template';
 
     public function handle(): int
     {
-        $name = (string) $this->argument('name');
+        $name = $this->argumentOrAsk('name', 'Component name (PascalCase, e.g. Alert):');
         $module = (string) $this->option('module');
         $slug = $this->toKebab($name);
 

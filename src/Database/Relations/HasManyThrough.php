@@ -17,10 +17,10 @@ class HasManyThrough extends Relation
         Connection $connection,
         Model $related,
         private readonly Model $through,
-        string $firstKey,       // through_table.first_key  (e.g. user_id on users)
-        string $secondKey,      // related_table.second_key (e.g. user_id on posts)
-        string $localKey,       // id on the source (country)
-        private readonly string $secondLocalKey, // id on the through (user)
+        string $firstKey,
+        private readonly string $secondKey,
+        string $localKey,
+        private readonly string $secondLocalKey,
         mixed $parentKeyValue
     ) {
         parent::__construct($connection, $related, $firstKey, $localKey, $parentKeyValue);

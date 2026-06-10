@@ -74,6 +74,8 @@ class Kernel
             Commands\KeyGenerateCommand::class,
             Commands\DownCommand::class,
             Commands\UpCommand::class,
+            Commands\AboutCommand::class,
+            Commands\TinkerCommand::class,
         ];
 
         foreach ($commands as $class) {

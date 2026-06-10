@@ -44,7 +44,10 @@ class Engine
         }
 
         $this->twig = new Environment($this->loader, [
-            'cache' => $debug ? false : $cachePath,
+            // Always cache compiled templates; auto_reload picks up source changes.
+            // Disabling cache in debug mode forces a full recompile on every
+            // request and is the single biggest performance drain in development.
+            'cache' => $cachePath,
             'auto_reload' => true,
             'debug' => $debug,
             'strict_variables' => $debug,

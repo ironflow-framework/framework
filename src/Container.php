@@ -10,7 +10,6 @@ use ReflectionClass;
 use ReflectionException;
 use ReflectionNamedType;
 use ReflectionParameter;
-use Throwable;
 
 /**
  * IoC Container with auto-resolution, singleton/transient scopes,
@@ -33,8 +32,14 @@ class Container
     /** @var array<string, string[]> Exported bindings per module */
     private array $moduleExports = [];
 
-    /** @var string|null The currently resolving module context */
-    private ?string $resolvingModule = null;
+
+    /**
+     * Cached constructor parameter lists, keyed by FQCN.
+     * Instance-level (not static) so each Container instance in tests is isolated.
+     *
+     * @var array<string, ReflectionParameter[]|null>
+     */
+    private array $reflectionCache = [];
 
     // ───────────────────────── Registration ─────────────────────────
 
@@ -76,11 +81,9 @@ class Container
     // ───────────────────────── Resolution ───────────────────────────
 
     /**
-     * @template T
-     * @param class-string<T> $abstract
-     * @return T
+     * @param class-string|string $abstract
      */
-    public function make(string $abstract, array $overrides = [], ?string $callerModule = null): object
+    public function make(string $abstract, array $overrides = [], ?string $callerModule = null): mixed
     {
         $this->validateModuleAccess($abstract, $callerModule);
 
@@ -106,7 +109,7 @@ class Container
     }
 
     /** Resolve without module-access checking (used internally). */
-    public function makeInternal(string $abstract, array $overrides = []): object
+    public function makeInternal(string $abstract, array $overrides = []): mixed
     {
         return $this->make($abstract, $overrides, callerModule: null);
     }
@@ -116,35 +119,32 @@ class Container
         return isset($this->instances[$abstract]) || isset($this->bindings[$abstract]);
     }
 
-    /** Set the current resolving module context (used by ModuleManager). */
-    public function setResolvingModule(?string $module): void
-    {
-        $this->resolvingModule = $module;
-    }
-
     // ───────────────────────── Auto-resolution ──────────────────────
 
     private function autoResolve(string $class, array $overrides): object
     {
-        try {
-            $ref = new ReflectionClass($class);
-        } catch (ReflectionException $e) {
-            throw new ContainerException("Cannot resolve [{$class}]: " . $e->getMessage(), 0, $e);
+        if (!array_key_exists($class, $this->reflectionCache)) {
+            try {
+                $ref = new ReflectionClass($class);
+            } catch (ReflectionException $e) {
+                throw new ContainerException("Cannot resolve [{$class}]: " . $e->getMessage(), 0, $e);
+            }
+
+            if (!$ref->isInstantiable()) {
+                throw new ContainerException("Class [{$class}] is not instantiable. Did you forget to bind an interface?");
+            }
+
+            $ctor = $ref->getConstructor();
+            $this->reflectionCache[$class] = $ctor?->getParameters();
         }
 
-        if (!$ref->isInstantiable()) {
-            throw new ContainerException("Class [{$class}] is not instantiable. Did you forget to bind an interface?");
-        }
+        $params = $this->reflectionCache[$class];
 
-        $constructor = $ref->getConstructor();
-
-        if ($constructor === null) {
+        if ($params === null) {
             return new $class();
         }
 
-        $args = $this->resolveParameters($constructor->getParameters(), $overrides);
-
-        return $ref->newInstanceArgs($args);
+        return new $class(...$this->resolveParameters($params, $overrides));
     }
 
     /**
@@ -157,10 +157,20 @@ class Container
         foreach ($params as $param) {
             $name = $param->getName();
 
-            // Manual override
+            // Override by parameter name
             if (array_key_exists($name, $overrides)) {
                 $resolved[] = $overrides[$name];
                 continue;
+            }
+
+            // Override by type name (e.g. [MyService::class => $instance])
+            $type = $param->getType();
+            if ($type instanceof ReflectionNamedType && !$type->isBuiltin()) {
+                $typeName = $type->getName();
+                if (array_key_exists($typeName, $overrides)) {
+                    $resolved[] = $overrides[$typeName];
+                    continue;
+                }
             }
 
             // #[Inject('key')] attribute
@@ -171,8 +181,7 @@ class Container
                 continue;
             }
 
-            // Type-hinted class
-            $type = $param->getType();
+            // Type-hinted class — auto-resolve
             if ($type instanceof ReflectionNamedType && !$type->isBuiltin()) {
                 $resolved[] = $this->make($type->getName());
                 continue;

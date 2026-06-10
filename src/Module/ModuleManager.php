@@ -114,13 +114,11 @@ class ModuleManager
 
     private function validate(): void
     {
-        foreach ($this->meta as $class => $meta) {
+        foreach ($this->meta as $meta) {
             foreach ($meta->imports as $dep) {
                 if (!isset($this->modules[$dep])) {
-                    $name = $meta->name;
-                    $depName = class_basename($dep);
                     throw new ModuleException(
-                        "Module [{$name}] requires [{$dep}] which is not enabled. " .
+                        "Module [{$meta->name}] requires [{$dep}] which is not enabled. " .
                         "Add [{$dep}] to config/modules.php."
                     );
                 }
@@ -164,7 +162,7 @@ class ModuleManager
 
         if (count($order) !== count($this->meta)) {
             $cycle = $this->findCycle();
-            throw new ModuleException("Circular dependency detected: {$cycle}");
+            throw new ModuleException("Module cycle detected — circular dependency: {$cycle}");
         }
 
         return $order;
@@ -222,6 +220,12 @@ class ModuleManager
     public function getModule(string $class): ?BaseModule
     {
         return $this->modules[$class] ?? null;
+    }
+
+    /** @return array<string, BaseModule> FQCN => instance */
+    public function getLoadedModules(): array
+    {
+        return $this->modules;
     }
 
     /** Return all registered command classes across all modules. */

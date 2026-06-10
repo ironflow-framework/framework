@@ -312,10 +312,6 @@ class FrameworkExtension extends AbstractExtension implements GlobalsInterface
         $app = Application::getInstance();
 
         $currentRoute = null;
-        try {
-            // Populated later during request cycle; safe to leave null at extension init
-        } catch (\Throwable) {
-        }
 
         return [
             'app' => [

@@ -8,12 +8,12 @@ use Ironflow\Console\Command;
 
 class MakeResourceCommand extends Command
 {
-    protected string $signature = 'make:resource {name : Class name (e.g. PostResource)} {--collection : Generate a ResourceCollection instead} {--module= : Target module}';
+    protected string $signature = 'make:resource {name? : Class name (e.g. PostResource)} {--collection : Generate a ResourceCollection instead} {--module= : Target module}';
     protected string $description = 'Create a new API Resource class';
 
     public function handle(): int
     {
-        $name = (string) $this->argument('name');
+        $name = $this->argumentOrAsk('name', 'Resource name (e.g. PostResource):');
         $collection = (bool) $this->option('collection');
         $module = (string) $this->option('module');
 

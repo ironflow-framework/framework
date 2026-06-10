@@ -203,7 +203,7 @@ abstract class Model
             $cast === 'datetime' => $value instanceof DateTimeImmutable ? $value : new DateTimeImmutable((string) $value),
             str_starts_with($cast, 'encrypted') => $this->decryptCast($value),
             // PHP native enum
-            enum_exists($cast) => $cast::from($value),
+            is_subclass_of($cast, \BackedEnum::class) => $cast::from($value),
             // Custom CastsAttributes
             class_exists($cast) && is_a($cast, CastsAttributes::class, true) => (new $cast())->get($this, $key, $value),
             default => $value,
@@ -580,7 +580,7 @@ abstract class Model
             return true;
         }
 
-        return $dispatcher->until(new $eventClass($this));
+        return (bool) $dispatcher->until(new $eventClass($this));
     }
 
     // ─────────────────────── Serialization ───────────────────────────
@@ -671,7 +671,7 @@ abstract class Model
         return $this->getChanges();
     }
 
-    private static function make(): static
+    protected static function make(): static
     {
         return new static();
     }

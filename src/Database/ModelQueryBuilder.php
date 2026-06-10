@@ -105,7 +105,7 @@ class ModelQueryBuilder extends QueryBuilder
 
     private function getConnection(): Connection
     {
-        return Application::getInstance()->getContainer()->make(Connection::class);
+        return $this->connection;
     }
 
     private function loadEagerRelations(Collection $models): void
@@ -141,7 +141,7 @@ class ModelQueryBuilder extends QueryBuilder
         $results = $relInstance->eagerLoad($models, $constraint);
 
         // If nested, continue eager loading on the results
-        if ($nested !== null && $results instanceof Collection && $results->isNotEmpty()) {
+        if ($nested !== null && $results->isNotEmpty()) {
             // recursively eager load
             $nestedLoader = new self(
                 $relInstance->getConnection(),

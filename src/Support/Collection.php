@@ -14,6 +14,9 @@ use Traversable;
 /**
  * Fluent wrapper for arrays of items.
  * Returned by QueryBuilder, Model::all(), and similar methods.
+ *
+ * @implements ArrayAccess<int|string, mixed>
+ * @implements IteratorAggregate<int|string, mixed>
  */
 class Collection implements ArrayAccess, Countable, IteratorAggregate, JsonSerializable
 {
@@ -31,10 +34,10 @@ class Collection implements ArrayAccess, Countable, IteratorAggregate, JsonSeria
         return new static(array_map($callback, $this->items));
     }
 
-    public function filter(callable $callback = null): static
+    public function filter(?callable $callback = null): static
     {
         return new static(array_values(
-            $callback ? array_filter($this->items, $callback) : array_filter($this->items)
+            $callback !== null ? array_filter($this->items, $callback) : array_filter($this->items)
         ));
     }
 
@@ -103,7 +106,7 @@ class Collection implements ArrayAccess, Countable, IteratorAggregate, JsonSeria
         return new static($result);
     }
 
-    public function unique(string $key = null): static
+    public function unique(?string $key = null): static
     {
         if ($key === null) {
             return new static(array_values(array_unique($this->items)));
@@ -120,7 +123,7 @@ class Collection implements ArrayAccess, Countable, IteratorAggregate, JsonSeria
         return new static($result);
     }
 
-    public function flatten(int $depth = 1): static
+    public function flatten(int $depth = PHP_INT_MAX): static
     {
         $result = [];
         foreach ($this->items as $item) {
@@ -175,35 +178,35 @@ class Collection implements ArrayAccess, Countable, IteratorAggregate, JsonSeria
 
     // ─────────────────────── Aggregates ──────────────────────────────
 
-    public function sum(string|callable $key = null): float|int
+    public function sum(string|callable|null $key = null): float
     {
         if ($key === null) {
-            return array_sum($this->items);
+            return (float) array_sum($this->items);
         }
         return $this->pluck($key)->sum();
     }
 
-    public function avg(string|callable $key = null): float
+    public function avg(string|callable|null $key = null): float
     {
         $count = $this->count();
         return $count > 0 ? $this->sum($key) / $count : 0.0;
     }
 
-    public function min(?string $key = null): mixed
+    public function min(?string $key = null): float|null
     {
         $items = $key ? $this->pluck($key)->toArray() : $this->items;
-        return empty($items) ? null : min($items);
+        return empty($items) ? null : (float) min($items);
     }
 
-    public function max(?string $key = null): mixed
+    public function max(?string $key = null): float|null
     {
         $items = $key ? $this->pluck($key)->toArray() : $this->items;
-        return empty($items) ? null : max($items);
+        return empty($items) ? null : (float) max($items);
     }
 
     // ─────────────────────── Search / check ──────────────────────────
 
-    public function first(callable $callback = null): mixed
+    public function first(?callable $callback = null): mixed
     {
         if ($callback === null) {
             return !empty($this->items) ? reset($this->items) : null;
@@ -216,7 +219,7 @@ class Collection implements ArrayAccess, Countable, IteratorAggregate, JsonSeria
         return null;
     }
 
-    public function last(callable $callback = null): mixed
+    public function last(?callable $callback = null): mixed
     {
         if ($callback === null) {
             return !empty($this->items) ? end($this->items) : null;

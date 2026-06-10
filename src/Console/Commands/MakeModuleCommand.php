@@ -8,12 +8,12 @@ use Ironflow\Console\Command;
 
 class MakeModuleCommand extends Command
 {
-    protected string $signature = 'make:module {name}';
+    protected string $signature = 'make:module {name?}';
     protected string $description = 'Create a new HMVC module with its full directory structure';
 
     protected function handle(): int
     {
-        $name = ucfirst((string) $this->argument('name'));
+        $name = ucfirst($this->argumentOrAsk('name', 'Module name (PascalCase, e.g. Blog):'));
         $base = base_path("modules/{$name}");
 
         if (is_dir($base)) {
