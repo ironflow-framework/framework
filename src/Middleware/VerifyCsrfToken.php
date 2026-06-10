@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Core\Middleware;
+namespace Ironflow\Middleware;
 
-use Core\Exceptions\HttpException;
-use Core\Http\Request;
-use Core\Session\SessionManager;
+use Ironflow\Exceptions\HttpException;
+use Ironflow\Http\Request;
+use Ironflow\Session\SessionManager;
 use Symfony\Component\HttpFoundation\Response;
 
 class VerifyCsrfToken
@@ -14,7 +14,9 @@ class VerifyCsrfToken
     /** URIs excluded from CSRF verification (e.g., API routes) */
     protected array $except = [];
 
-    public function __construct(private readonly SessionManager $session) {}
+    public function __construct(private readonly SessionManager $session)
+    {
+    }
 
     public function handle(Request $request, callable $next): Response
     {

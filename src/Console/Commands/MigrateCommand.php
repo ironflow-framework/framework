@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Core\Console\Commands;
+namespace Ironflow\Console\Commands;
 
-use Core\Console\Command;
-use Core\Database\Connection;
-use Core\Database\Migrations\Migrator;
+use Ironflow\Console\Command;
+use Ironflow\Database\Connection;
+use Ironflow\Database\Migrations\Migrator;
 
 class MigrateCommand extends Command
 {
-    protected string $signature   = 'migrate {--path=}';
+    protected string $signature = 'migrate {--path=}';
     protected string $description = 'Run pending database migrations';
 
     public function __construct(private readonly Connection $db)
@@ -29,7 +29,7 @@ class MigrateCommand extends Command
         }
 
         $migrator = new Migrator($this->db);
-        $ran      = $migrator->run($path);
+        $ran = $migrator->run($path);
 
         if (empty($ran)) {
             $this->info('Nothing to migrate.');
@@ -44,7 +44,7 @@ class MigrateCommand extends Command
 
     private function runAllModuleMigrations(): void
     {
-        $migrator    = new Migrator($this->db);
+        $migrator = new Migrator($this->db);
         $modulesPath = base_path('modules');
 
         if (!is_dir($modulesPath)) {

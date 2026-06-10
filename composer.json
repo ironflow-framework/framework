@@ -1,5 +1,5 @@
 {
-    "name": "monvendor/framework",
+    "name": "ironflow-framework/framework",
     "description": "IronFlow — PHP 8.2+ HMVC Framework Core",
     "type": "library",
     "license": "MIT",
@@ -21,7 +21,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Core\\": "src/"
+            "Ironflow\\": "src/"
         },
         "files": [
             "src/Support/helpers.php"
@@ -29,7 +29,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Core\\Tests\\": "tests/"
+            "Ironflow\\Tests\\": "tests/"
         }
     },
     "minimum-stability": "stable",

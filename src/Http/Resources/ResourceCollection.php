@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Core\Http\Resources;
+namespace Ironflow\Http\Resources;
 
-use Core\Http\Request;
-use Core\Http\Response;
+use Ironflow\Http\Request;
+use Ironflow\Http\Response;
 
 /**
  * Wraps an iterable of models/arrays and transforms each via a JsonResource class.
@@ -17,21 +17,22 @@ use Core\Http\Response;
  */
 final class ResourceCollection
 {
-    private array $with   = [];
-    private array $meta   = [];
-    private int   $status = 200;
+    private array $with = [];
+    private array $meta = [];
+    private int $status = 200;
 
     public function __construct(
         private readonly iterable $resources,
-        private readonly string   $resourceClass
-    ) {}
+        private readonly string $resourceClass
+    ) {
+    }
 
     public function toResponse(Request $request): Response
     {
         $data = [];
         foreach ($this->resources as $item) {
             $resource = new $this->resourceClass($item);
-            $data[]   = $resource->toArray($request);
+            $data[] = $resource->toArray($request);
         }
 
         $payload = ['data' => $data];
@@ -72,7 +73,8 @@ final class ResourceCollection
     public function count(): int
     {
         return is_countable($this->resources) ? count($this->resources) : iterator_count(
-            (function () { yield from $this->resources; })()
+            (function () {
+                yield from $this->resources; })()
         );
     }
 }

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Core\Middleware;
+namespace Ironflow\Middleware;
 
-use Core\Exceptions\HttpException;
-use Core\Http\Request;
+use Ironflow\Exceptions\HttpException;
+use Ironflow\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -26,7 +26,7 @@ class ThrottleRequests
         }
 
         $response = $next($request);
-        $response->headers->set('X-RateLimit-Limit',     (string) $maxAttempts);
+        $response->headers->set('X-RateLimit-Limit', (string) $maxAttempts);
         $response->headers->set('X-RateLimit-Remaining', (string) max(0, $remaining));
 
         return $response;
@@ -46,7 +46,7 @@ class ThrottleRequests
         }
 
         // File-based fallback
-        $dir  = sys_get_temp_dir() . '/ironflow_throttle';
+        $dir = sys_get_temp_dir() . '/ironflow_throttle';
         if (!is_dir($dir)) {
             mkdir($dir, 0755, true);
         }

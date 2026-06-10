@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Core\Tests\Unit;
+namespace Ironflow\Tests\Unit;
 
-use Core\Console\Command;
+use Ironflow\Console\Command;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
@@ -74,7 +74,10 @@ class CliSignatureTest extends TestCase
         $cmd = new class extends Command {
             protected string $signature = 'my:command {arg}';
             protected string $description = 'Test';
-            public function handle(): int { return 0; }
+            public function handle(): int
+            {
+                return 0;
+            }
         };
         $this->assertSame('my:command', $cmd->getName());
     }

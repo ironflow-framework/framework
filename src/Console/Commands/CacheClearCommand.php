@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Core\Console\Commands;
+namespace Ironflow\Console\Commands;
 
-use Core\Console\Command;
+use Ironflow\Console\Command;
 
 class CacheClearCommand extends Command
 {
-    protected string $signature   = 'cache:clear';
+    protected string $signature = 'cache:clear';
     protected string $description = 'Clear the application cache (Twig cache + app cache)';
 
     protected function handle(): int

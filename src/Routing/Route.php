@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Core\Routing;
+namespace Ironflow\Routing;
 
 /**
  * Represents a single route with its URI pattern, HTTP method,
@@ -11,14 +11,14 @@ namespace Core\Routing;
 class Route
 {
     private ?string $name = null;
-    private array   $middlewares = [];
-    private array   $wheres = [];
-    private string  $compiledPattern = '';
+    private array $middlewares = [];
+    private array $wheres = [];
+    private string $compiledPattern = '';
 
     public function __construct(
         private readonly string $method,
         private readonly string $uri,
-        private readonly mixed  $action
+        private readonly mixed $action
     ) {
         $this->compiledPattern = $this->compile($uri);
     }
@@ -43,11 +43,26 @@ class Route
         return $this;
     }
 
-    public function getMethod(): string   { return $this->method; }
-    public function getUri(): string      { return $this->uri; }
-    public function getAction(): mixed    { return $this->action; }
-    public function getName(): ?string    { return $this->name; }
-    public function getMiddlewares(): array { return $this->middlewares; }
+    public function getMethod(): string
+    {
+        return $this->method;
+    }
+    public function getUri(): string
+    {
+        return $this->uri;
+    }
+    public function getAction(): mixed
+    {
+        return $this->action;
+    }
+    public function getName(): ?string
+    {
+        return $this->name;
+    }
+    public function getMiddlewares(): array
+    {
+        return $this->middlewares;
+    }
 
     /** Try to match the given URI. Returns extracted params or null. */
     public function match(string $uri): ?array
@@ -88,10 +103,10 @@ class Route
     {
         // Escape forward slashes for the regex delimiter
         $pattern = preg_replace_callback('/\{(\w+)(\?)?\}/', function ($m) {
-            $name     = $m[1];
+            $name = $m[1];
             $optional = isset($m[2]) && $m[2] === '?';
-            $regex    = $this->wheres[$name] ?? '[^/]+';
-            $segment  = "(?P<{$name}>{$regex})";
+            $regex = $this->wheres[$name] ?? '[^/]+';
+            $segment = "(?P<{$name}>{$regex})";
             return $optional ? "(?:/{$segment})?" : $segment;
         }, $uri);
 

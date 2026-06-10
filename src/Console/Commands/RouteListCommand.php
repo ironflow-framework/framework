@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Core\Console\Commands;
+namespace Ironflow\Console\Commands;
 
-use Core\Console\Command;
-use Core\Routing\Router;
+use Ironflow\Console\Command;
+use Ironflow\Routing\Router;
 
 class RouteListCommand extends Command
 {
-    protected string $signature   = 'route:list';
+    protected string $signature = 'route:list';
     protected string $description = 'List all registered routes';
 
     public function __construct(private readonly Router $router)

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Core\Module;
+namespace Ironflow\Module;
 
-use Core\Container;
-use Core\Events\Dispatcher;
-use Core\Module\Attributes\Module as ModuleAttr;
-use Core\Exceptions\ModuleException;
+use Ironflow\Container;
+use Ironflow\Events\Dispatcher;
+use Ironflow\Module\Attributes\Module as ModuleAttr;
+use Ironflow\Exceptions\ModuleException;
 use ReflectionClass;
 
 /**
@@ -31,7 +31,8 @@ class ModuleManager
     public function __construct(
         private readonly Container $container,
         private readonly string $modulesPath
-    ) {}
+    ) {
+    }
 
     public function register(string $moduleClass): void
     {
@@ -39,7 +40,7 @@ class ModuleManager
             return;
         }
 
-        $ref   = new ReflectionClass($moduleClass);
+        $ref = new ReflectionClass($moduleClass);
         $attrs = $ref->getAttributes(ModuleAttr::class);
 
         if (empty($attrs)) {
@@ -86,8 +87,8 @@ class ModuleManager
     private function bootModule(string $class): void
     {
         $module = $this->modules[$class];
-        $meta   = $this->meta[$class];
-        $name   = $meta->name;
+        $meta = $this->meta[$class];
+        $name = $meta->name;
 
         // Register Twig namespace
         $viewsDir = $this->modulesPath . '/' . ucfirst($name) . '/Views';
@@ -116,7 +117,7 @@ class ModuleManager
         foreach ($this->meta as $class => $meta) {
             foreach ($meta->imports as $dep) {
                 if (!isset($this->modules[$dep])) {
-                    $name    = $meta->name;
+                    $name = $meta->name;
                     $depName = class_basename($dep);
                     throw new ModuleException(
                         "Module [{$name}] requires [{$dep}] which is not enabled. " .
@@ -132,7 +133,7 @@ class ModuleManager
     private function topologicalSort(): array
     {
         $inDegree = array_fill_keys(array_keys($this->meta), 0);
-        $adj      = array_fill_keys(array_keys($this->meta), []);
+        $adj = array_fill_keys(array_keys($this->meta), []);
 
         foreach ($this->meta as $class => $meta) {
             foreach ($meta->imports as $dep) {
@@ -172,7 +173,7 @@ class ModuleManager
     private function findCycle(): string
     {
         $visited = [];
-        $path    = [];
+        $path = [];
 
         foreach (array_keys($this->meta) as $start) {
             if (!isset($visited[$start])) {
@@ -188,7 +189,7 @@ class ModuleManager
     private function dfsHasCycle(string $node, array &$visited, array &$path): bool
     {
         $visited[$node] = 'gray';
-        $path[]         = $this->meta[$node]->name;
+        $path[] = $this->meta[$node]->name;
 
         foreach ($this->meta[$node]->imports as $dep) {
             if (!isset($visited[$dep])) {
@@ -241,7 +242,7 @@ class ModuleManager
         $lines = ["Module Dependency Graph\n" . str_repeat('─', 60)];
 
         foreach ($this->bootOrder ?: array_keys($this->meta) as $class) {
-            $meta    = $this->meta[$class];
+            $meta = $this->meta[$class];
             $imports = empty($meta->imports) ? '' : ' ← [' . implode(', ', array_map(
                 fn($d) => $this->meta[$d]->name ?? class_basename($d),
                 $meta->imports

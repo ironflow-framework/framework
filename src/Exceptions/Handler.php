@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Core\Exceptions;
+namespace Ironflow\Exceptions;
 
-use Core\Http\JsonResponse;
-use Core\Http\Request;
-use Core\Http\Response;
-use Core\Template\Engine;
-use Core\Validation\ValidationException;
+use Ironflow\Http\JsonResponse;
+use Ironflow\Http\Request;
+use Ironflow\Http\Response;
+use Ironflow\Template\Engine;
+use Ironflow\Validation\ValidationException;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 use Throwable;
@@ -26,7 +26,8 @@ class Handler
         private readonly Engine $view,
         private readonly bool $debug,
         private readonly string $errorViewsPath
-    ) {}
+    ) {
+    }
 
     public function render(Request $request, Throwable $e): Response
     {
@@ -63,12 +64,13 @@ class Handler
         $referer = $request->headers->get('referer', '/');
 
         try {
-            $session = \Core\Application::getInstance()
+            $session = \Ironflow\Application::getInstance()
                 ->getContainer()
-                ->make(\Core\Session\SessionManager::class);
+                ->make(\Ironflow\Session\SessionManager::class);
             $session->flash('_errors', $e->errors());
             $session->flash('_old_input', $request->all());
-        } catch (Throwable) {}
+        } catch (Throwable) {
+        }
 
         return new Response('', 302, ['Location' => $referer]);
     }
@@ -97,7 +99,7 @@ class Handler
 
         try {
             $html = $this->view->render($template, [
-                'code'    => $status,
+                'code' => $status,
                 'message' => $e->getMessage(),
             ]);
             return Response::view($html, $status);
@@ -115,13 +117,13 @@ class Handler
 
     private function buildDebugHtml(Request $request, Throwable $e, int $status, array $frames): string
     {
-        $class   = get_class($e);
+        $class = get_class($e);
         $message = htmlspecialchars($e->getMessage(), ENT_QUOTES);
-        $file    = $e->getFile();
-        $line    = $e->getLine();
+        $file = $e->getFile();
+        $line = $e->getLine();
 
         $sourceHtml = $this->buildSourceSnippet($file, $line);
-        $traceHtml  = $this->buildTraceHtml($frames);
+        $traceHtml = $this->buildTraceHtml($frames);
         $requestHtml = $this->buildRequestInfo($request);
 
         return <<<HTML
@@ -186,16 +188,16 @@ HTML;
 
         $lines = file($file);
         $start = max(0, $faultLine - 11);
-        $end   = min(count($lines) - 1, $faultLine + 9);
+        $end = min(count($lines) - 1, $faultLine + 9);
 
         $html = '<pre class="bg-gray-900 rounded-lg p-4 overflow-x-auto text-sm leading-relaxed"><code>';
         for ($i = $start; $i <= $end; $i++) {
-            $lineNum  = $i + 1;
-            $content  = htmlspecialchars($lines[$i] ?? '', ENT_QUOTES);
-            $isFault  = ($lineNum === $faultLine);
-            $class    = $isFault ? ' class="line-fault"' : '';
+            $lineNum = $i + 1;
+            $content = htmlspecialchars($lines[$i] ?? '', ENT_QUOTES);
+            $isFault = ($lineNum === $faultLine);
+            $class = $isFault ? ' class="line-fault"' : '';
             $numStyle = $isFault ? 'text-red-400' : 'text-gray-600';
-            $html .= "<span{$class}><span class=\"{$numStyle} select-none mr-4\">" . str_pad((string)$lineNum, 4) . "</span>{$content}</span>";
+            $html .= "<span{$class}><span class=\"{$numStyle} select-none mr-4\">" . str_pad((string) $lineNum, 4) . "</span>{$content}</span>";
         }
         $html .= '</code></pre>';
 
@@ -206,10 +208,10 @@ HTML;
     {
         $html = '<div class="space-y-2">';
         foreach (array_slice($frames, 0, 20) as $i => $frame) {
-            $file   = htmlspecialchars($frame['file'] ?? '[internal]', ENT_QUOTES);
-            $line   = $frame['line'] ?? '';
-            $func   = htmlspecialchars(($frame['class'] ?? '') . ($frame['type'] ?? '') . ($frame['function'] ?? ''), ENT_QUOTES);
-            $html  .= <<<FRAME
+            $file = htmlspecialchars($frame['file'] ?? '[internal]', ENT_QUOTES);
+            $line = $frame['line'] ?? '';
+            $func = htmlspecialchars(($frame['class'] ?? '') . ($frame['type'] ?? '') . ($frame['function'] ?? ''), ENT_QUOTES);
+            $html .= <<<FRAME
 <div class="bg-gray-900 rounded p-3 font-mono text-sm">
   <div class="text-indigo-400">#{$i} {$func}()</div>
   <div class="text-gray-500 text-xs mt-1">{$file}:{$line}</div>
@@ -221,8 +223,8 @@ FRAME;
 
     private function buildRequestInfo(Request $request): string
     {
-        $method  = htmlspecialchars($request->getMethod(), ENT_QUOTES);
-        $uri     = htmlspecialchars($request->getRequestUri(), ENT_QUOTES);
+        $method = htmlspecialchars($request->getMethod(), ENT_QUOTES);
+        $uri = htmlspecialchars($request->getRequestUri(), ENT_QUOTES);
         $headers = '';
         foreach ($request->headers->all() as $name => $values) {
             $key = htmlspecialchars($name, ENT_QUOTES);
@@ -232,8 +234,8 @@ FRAME;
 
         $bodyParams = '';
         foreach ($request->request->all() as $k => $v) {
-            $k = htmlspecialchars((string)$k, ENT_QUOTES);
-            $v = htmlspecialchars((string)$v, ENT_QUOTES);
+            $k = htmlspecialchars((string) $k, ENT_QUOTES);
+            $v = htmlspecialchars((string) $v, ENT_QUOTES);
             $bodyParams .= "<tr><td class='py-1 pr-6 text-indigo-400'>{$k}</td><td class='py-1 text-gray-300'>{$v}</td></tr>";
         }
 
@@ -260,10 +262,10 @@ HTML;
         if ($status >= 500) {
             $this->logger->error($e->getMessage(), [
                 'exception' => get_class($e),
-                'file'      => $e->getFile(),
-                'line'      => $e->getLine(),
-                'url'       => $request->getRequestUri(),
-                'method'    => $request->getMethod(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'url' => $request->getRequestUri(),
+                'method' => $request->getMethod(),
             ]);
         }
     }

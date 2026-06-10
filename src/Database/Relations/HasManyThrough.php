@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Core\Database\Relations;
+namespace Ironflow\Database\Relations;
 
-use Core\Database\Connection;
-use Core\Database\Model;
-use Core\Support\Collection;
+use Ironflow\Database\Connection;
+use Ironflow\Database\Model;
+use Ironflow\Support\Collection;
 
 /**
  * Has-many-through: Country hasManyThrough Post through User.
@@ -16,7 +16,7 @@ class HasManyThrough extends Relation
     public function __construct(
         Connection $connection,
         Model $related,
-        private readonly Model  $through,
+        private readonly Model $through,
         string $firstKey,       // through_table.first_key  (e.g. user_id on users)
         string $secondKey,      // related_table.second_key (e.g. user_id on posts)
         string $localKey,       // id on the source (country)
@@ -30,7 +30,7 @@ class HasManyThrough extends Relation
     {
         $relatedTable = $this->related->getTableName();
         $throughTable = $this->through->getTableName();
-        $class        = get_class($this->related);
+        $class = get_class($this->related);
 
         $sql = "SELECT {$relatedTable}.* FROM {$relatedTable} "
             . "INNER JOIN {$throughTable} ON {$throughTable}.{$this->secondLocalKey} = {$relatedTable}.{$this->secondKey} "
@@ -50,7 +50,7 @@ class HasManyThrough extends Relation
 
         $relatedTable = $this->related->getTableName();
         $throughTable = $this->through->getTableName();
-        $class        = get_class($this->related);
+        $class = get_class($this->related);
         $placeholders = implode(',', array_fill(0, count($keys), '?'));
 
         $sql = "SELECT {$relatedTable}.*, {$throughTable}.{$this->foreignKey} as _through_parent "

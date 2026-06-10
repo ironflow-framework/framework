@@ -2,26 +2,26 @@
 
 declare(strict_types=1);
 
-namespace Core\Console\Commands;
+namespace Ironflow\Console\Commands;
 
-use Core\Console\Command;
+use Ironflow\Console\Command;
 
 class MakeCommandCommand extends Command
 {
-    protected string $signature   = 'make:command {name} {--module=}';
+    protected string $signature = 'make:command {name} {--module=}';
     protected string $description = 'Create a new console command class';
 
     protected function handle(): int
     {
-        $name   = (string) $this->argument('name');
+        $name = (string) $this->argument('name');
         $module = $this->option('module');
 
         if ($module) {
             $path = base_path("modules/{$module}/Commands/{$name}.php");
-            $ns   = "Modules\\{$module}\\Commands";
+            $ns = "Modules\\{$module}\\Commands";
         } else {
             $path = base_path("app/Commands/{$name}.php");
-            $ns   = "App\\Commands";
+            $ns = "App\\Commands";
             @mkdir(dirname($path), 0755, true);
         }
 
@@ -41,7 +41,7 @@ declare(strict_types=1);
 
 namespace {$ns};
 
-use Core\\Console\\Command;
+use Ironflow\\Console\\Command;
 
 class {$name} extends Command
 {

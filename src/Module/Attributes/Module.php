@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Core\Module\Attributes;
+namespace Ironflow\Module\Attributes;
 
 use Attribute;
 
@@ -19,11 +19,12 @@ use Attribute;
 final class Module
 {
     public function __construct(
-        public readonly string  $name,
-        public readonly array   $imports   = [],
-        public readonly array   $providers = [],
-        public readonly array   $exports   = [],
-        public readonly array   $commands  = [],
-        public readonly array   $listeners = [],
-    ) {}
+        public readonly string $name,
+        public readonly array $imports = [],
+        public readonly array $providers = [],
+        public readonly array $exports = [],
+        public readonly array $commands = [],
+        public readonly array $listeners = [],
+    ) {
+    }
 }

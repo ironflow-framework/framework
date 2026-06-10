@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Core\Attributes;
+namespace Ironflow\Attributes;
 
 use Attribute;
 
@@ -15,5 +15,6 @@ final class Injectable
 {
     public function __construct(
         public readonly string $scope = 'transient'
-    ) {}
+    ) {
+    }
 }

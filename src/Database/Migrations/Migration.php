@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Core\Database\Migrations;
+namespace Ironflow\Database\Migrations;
 
 /**
  * Base class for all migrations. Subclasses implement up() and down().

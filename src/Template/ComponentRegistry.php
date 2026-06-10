@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Core\Template;
+namespace Ironflow\Template;
 
 /**
  * Central registry for view components.

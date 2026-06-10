@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Core\Console\Commands;
+namespace Ironflow\Console\Commands;
 
-use Core\Console\Command;
-use Core\Template\Engine;
+use Ironflow\Console\Command;
+use Ironflow\Template\Engine;
 use Twig\Error\SyntaxError;
 
 class TwigLintCommand extends Command
 {
-    protected string $signature   = 'twig:lint {path=}';
+    protected string $signature = 'twig:lint {path=}';
     protected string $description = 'Verify the syntax of Twig templates';
 
     public function __construct(private readonly Engine $view)
@@ -26,7 +26,7 @@ class TwigLintCommand extends Command
             base_path('modules') . '/**/Views/**/*.twig',
         ];
 
-        $files  = [];
+        $files = [];
         foreach ($patterns as $pattern) {
             foreach (glob($pattern, GLOB_BRACE) ?: [] as $file) {
                 $files[] = $file;
@@ -35,7 +35,8 @@ class TwigLintCommand extends Command
 
         // Also use recursive iterator
         foreach ([base_path('resources/views'), base_path('modules')] as $dir) {
-            if (!is_dir($dir)) continue;
+            if (!is_dir($dir))
+                continue;
             $iter = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($dir));
             foreach ($iter as $file) {
                 if ($file->getExtension() === 'twig') {
@@ -44,9 +45,9 @@ class TwigLintCommand extends Command
             }
         }
 
-        $files  = array_unique($files);
+        $files = array_unique($files);
         $errors = 0;
-        $twig   = $this->view->getTwig();
+        $twig = $this->view->getTwig();
 
         foreach ($files as $file) {
             try {

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Core\Tests\Unit;
+namespace Ironflow\Tests\Unit;
 
-use Core\Support\Collection;
+use Ironflow\Support\Collection;
 use PHPUnit\Framework\TestCase;
 
 class CollectionTest extends TestCase

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Core\Facades;
+namespace Ironflow\Facades;
 
-use Core\Support\Facade;
+use Ironflow\Support\Facade;
 
 /**
  * @method static mixed get(string $key, mixed $default = null)
@@ -16,6 +16,6 @@ class Config extends Facade
 {
     protected static function getFacadeAccessor(): string
     {
-        return \Core\Config\Repository::class;
+        return \Ironflow\Config\Repository::class;
     }
 }

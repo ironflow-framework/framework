@@ -4,24 +4,24 @@ declare(strict_types=1);
 
 namespace Core;
 
-use Core\Auth\AuthManager;
-use Core\Cache\CacheManager;
-use Core\Config\Repository as ConfigRepository;
-use Core\Console\Kernel as ConsoleKernel;
-use Core\Container;
-use Core\Events\Dispatcher;
-use Core\Exceptions\Handler as ExceptionHandler;
-use Core\Facades\Facade;
-use Core\Http\Kernel as HttpKernel;
-use Core\Http\Request;
-use Core\Logging\Logger;
-use Core\Module\ModuleManager;
-use Core\Routing\Router;
-use Core\Session\SessionManager;
-use Core\Template\ComponentRegistry;
-use Core\Template\Engine as TemplateEngine;
-use Core\Database\Connection;
-use Core\Validation\ValidatorFactory;
+use Ironflow\Auth\AuthManager;
+use Ironflow\Cache\CacheManager;
+use Ironflow\Config\Repository as ConfigRepository;
+use Ironflow\Console\Kernel as ConsoleKernel;
+use Ironflow\Container;
+use Ironflow\Events\Dispatcher;
+use Ironflow\Exceptions\Handler as ExceptionHandler;
+use Ironflow\Facades\Facade;
+use Ironflow\Http\Kernel as HttpKernel;
+use Ironflow\Http\Request;
+use Ironflow\Logging\Logger;
+use Ironflow\Module\ModuleManager;
+use Ironflow\Routing\Router;
+use Ironflow\Session\SessionManager;
+use Ironflow\Template\ComponentRegistry;
+use Ironflow\Template\Engine as TemplateEngine;
+use Ironflow\Database\Connection;
+use Ironflow\Validation\ValidatorFactory;
 use Dotenv\Dotenv;
 use Throwable;
 
@@ -43,13 +43,13 @@ class Application
     {
         self::$instance = $this;
         $this->paths = [
-            'config'   => $basePath . '/config',
-            'modules'  => $basePath . '/modules',
-            'storage'  => $basePath . '/storage',
-            'cache'    => $basePath . '/storage/cache',
-            'logs'     => $basePath . '/storage/logs',
-            'views'    => $basePath . '/resources/views',
-            'public'   => $basePath . '/public',
+            'config' => $basePath . '/config',
+            'modules' => $basePath . '/modules',
+            'storage' => $basePath . '/storage',
+            'cache' => $basePath . '/storage/cache',
+            'logs' => $basePath . '/storage/logs',
+            'views' => $basePath . '/resources/views',
+            'public' => $basePath . '/public',
         ];
 
         $this->container = new Container();

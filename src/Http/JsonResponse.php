@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Core\Http;
+namespace Ironflow\Http;
 
 use Symfony\Component\HttpFoundation\JsonResponse as SymfonyJsonResponse;
 

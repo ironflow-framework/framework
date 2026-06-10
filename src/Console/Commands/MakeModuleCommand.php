@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Core\Console\Commands;
+namespace Ironflow\Console\Commands;
 
-use Core\Console\Command;
+use Ironflow\Console\Command;
 
 class MakeModuleCommand extends Command
 {
-    protected string $signature   = 'make:module {name}';
+    protected string $signature = 'make:module {name}';
     protected string $description = 'Create a new HMVC module with its full directory structure';
 
     protected function handle(): int
@@ -66,8 +66,8 @@ declare(strict_types=1);
 
 namespace Modules\\{$name};
 
-use Core\\Module\\Attributes\\Module;
-use Core\\Module\\BaseModule;
+use Ironflow\\Module\\Attributes\\Module;
+use Ironflow\\Module\\BaseModule;
 
 #[Module(
     name: '{$lower}',
@@ -127,8 +127,8 @@ declare(strict_types=1);
 
 namespace Modules\\{$name}\\Controllers;
 
-use Core\\Http\\Request;
-use Core\\Http\\Response;
+use Ironflow\\Http\\Request;
+use Ironflow\\Http\\Response;
 
 class {$name}Controller
 {

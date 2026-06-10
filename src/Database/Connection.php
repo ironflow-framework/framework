@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Core\Database;
+namespace Ironflow\Database;
 
 use Doctrine\DBAL\Configuration;
 use Doctrine\DBAL\Connection as DbalConnection;
@@ -44,7 +44,7 @@ class Connection
 
     public function select(string $sql, array $bindings = []): array
     {
-        $start  = microtime(true);
+        $start = microtime(true);
         $result = $this->dbal->fetchAllAssociative($sql, $bindings);
         $this->logQuery($sql, $bindings, microtime(true) - $start);
         return $result;
@@ -52,7 +52,7 @@ class Connection
 
     public function selectOne(string $sql, array $bindings = []): ?array
     {
-        $start  = microtime(true);
+        $start = microtime(true);
         $result = $this->dbal->fetchAssociative($sql, $bindings) ?: null;
         $this->logQuery($sql, $bindings, microtime(true) - $start);
         return $result;
@@ -60,7 +60,7 @@ class Connection
 
     public function statement(string $sql, array $bindings = []): int
     {
-        $start  = microtime(true);
+        $start = microtime(true);
         $result = $this->dbal->executeStatement($sql, $bindings);
         $this->logQuery($sql, $bindings, microtime(true) - $start);
         return $result;
@@ -77,8 +77,8 @@ class Connection
 
     public function update(string $table, array $data, array $criteria): int
     {
-        $start  = microtime(true);
-        $count  = $this->dbal->update($table, $data, $criteria);
+        $start = microtime(true);
+        $count = $this->dbal->update($table, $data, $criteria);
         $this->logQuery("UPDATE {$table}", $data, microtime(true) - $start);
         return $count;
     }
@@ -146,9 +146,9 @@ class Connection
     {
         if ($this->logging) {
             $this->queryLog[] = [
-                'sql'      => $sql,
+                'sql' => $sql,
                 'bindings' => $bindings,
-                'time_ms'  => round($time * 1000, 2),
+                'time_ms' => round($time * 1000, 2),
             ];
         }
     }
@@ -161,10 +161,10 @@ class Connection
 
         // Normalize driver names
         $driver = match ($driver) {
-            'mysql'  => 'pdo_mysql',
-            'pgsql'  => 'pdo_pgsql',
+            'mysql' => 'pdo_mysql',
+            'pgsql' => 'pdo_pgsql',
             'sqlite' => 'pdo_sqlite',
-            default  => $driver,
+            default => $driver,
         };
 
         if ($driver === 'pdo_sqlite') {
@@ -176,13 +176,13 @@ class Connection
         }
 
         return [
-            'driver'   => $driver,
-            'host'     => $cfg['host'] ?? '127.0.0.1',
-            'port'     => (int) ($cfg['port'] ?? 3306),
-            'dbname'   => $cfg['database'] ?? '',
-            'user'     => $cfg['username'] ?? '',
+            'driver' => $driver,
+            'host' => $cfg['host'] ?? '127.0.0.1',
+            'port' => (int) ($cfg['port'] ?? 3306),
+            'dbname' => $cfg['database'] ?? '',
+            'user' => $cfg['username'] ?? '',
             'password' => $cfg['password'] ?? '',
-            'charset'  => $cfg['charset']  ?? 'utf8mb4',
+            'charset' => $cfg['charset'] ?? 'utf8mb4',
         ];
     }
 }

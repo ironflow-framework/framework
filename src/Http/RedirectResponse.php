@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Core\Http;
+namespace Ironflow\Http;
 
-use Core\Application;
+use Ironflow\Application;
 use Symfony\Component\HttpFoundation\RedirectResponse as SymfonyRedirect;
 
 /**
@@ -22,7 +22,7 @@ class RedirectResponse extends SymfonyRedirect
     /** Redirect to a named route. */
     public function route(string $name, array $params = []): static
     {
-        $url = Application::getInstance()->getContainer()->make(\Core\Routing\Router::class)->route($name, $params);
+        $url = Application::getInstance()->getContainer()->make(\Ironflow\Routing\Router::class)->route($name, $params);
         $this->setTargetUrl($url);
         return $this;
     }
@@ -45,7 +45,7 @@ class RedirectResponse extends SymfonyRedirect
     /** Flash validation errors and old input to session. */
     public function withErrors(array $errors, string $bag = 'default'): static
     {
-        $this->flashData['_errors']   = $errors;
+        $this->flashData['_errors'] = $errors;
         return $this;
     }
 

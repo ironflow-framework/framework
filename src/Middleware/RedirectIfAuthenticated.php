@@ -2,16 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Core\Middleware;
+namespace Ironflow\Middleware;
 
-use Core\Auth\AuthManager;
-use Core\Http\Request;
-use Core\Http\RedirectResponse;
+use Ironflow\Auth\AuthManager;
+use Ironflow\Http\Request;
+use Ironflow\Http\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
 
 class RedirectIfAuthenticated
 {
-    public function __construct(private readonly AuthManager $auth) {}
+    public function __construct(private readonly AuthManager $auth)
+    {
+    }
 
     public function handle(Request $request, callable $next, string $guard = 'session'): Response
     {

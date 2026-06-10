@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Core\Console\Commands;
+namespace Ironflow\Console\Commands;
 
-use Core\Console\Command;
+use Ironflow\Console\Command;
 
 class ServeCommand extends Command
 {
-    protected string $signature   = 'serve {--host=localhost} {--port=8080}';
+    protected string $signature = 'serve {--host=localhost} {--port=8080}';
     protected string $description = 'Start the built-in PHP development server';
 
     protected function handle(): int

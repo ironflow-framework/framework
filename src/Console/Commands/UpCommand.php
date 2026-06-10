@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Core\Console\Commands;
+namespace Ironflow\Console\Commands;
 
-use Core\Console\Command;
+use Ironflow\Console\Command;
 
 class UpCommand extends Command
 {
-    protected string $signature   = 'up';
+    protected string $signature = 'up';
     protected string $description = 'Bring the application out of maintenance mode';
 
     protected function handle(): int

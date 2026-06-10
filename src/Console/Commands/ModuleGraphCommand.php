@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Core\Console\Commands;
+namespace Ironflow\Console\Commands;
 
-use Core\Console\Command;
-use Core\Module\ModuleManager;
+use Ironflow\Console\Command;
+use Ironflow\Module\ModuleManager;
 
 class ModuleGraphCommand extends Command
 {
-    protected string $signature   = 'module:graph {--check}';
+    protected string $signature = 'module:graph {--check}';
     protected string $description = 'Display the module dependency graph';
 
     public function __construct(private readonly ModuleManager $manager)

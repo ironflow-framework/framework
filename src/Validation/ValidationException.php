@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Core\Validation;
+namespace Ironflow\Validation;
 
 use RuntimeException;
 

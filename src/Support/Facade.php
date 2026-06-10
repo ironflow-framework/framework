@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Core\Support;
+namespace Ironflow\Support;
 
-use Core\Container;
+use Ironflow\Container;
 use RuntimeException;
 
 /**
@@ -21,7 +21,7 @@ abstract class Facade
     public static function setContainer(Container $container): void
     {
         self::$container = $container;
-        self::$resolved  = [];
+        self::$resolved = [];
     }
 
     /** Return the Container binding key (usually a FQCN). */

@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Core\Database;
+namespace Ironflow\Database;
 
-use Core\Application;
-use Core\Database\Relations\BelongsTo;
-use Core\Database\Relations\BelongsToMany;
-use Core\Database\Relations\HasMany;
-use Core\Database\Relations\HasManyThrough;
-use Core\Database\Relations\HasOne;
-use Core\Events\Dispatcher;
-use Core\Support\Collection;
-use Core\Support\Paginator;
+use Ironflow\Application;
+use Ironflow\Database\Relations\BelongsTo;
+use Ironflow\Database\Relations\BelongsToMany;
+use Ironflow\Database\Relations\HasMany;
+use Ironflow\Database\Relations\HasManyThrough;
+use Ironflow\Database\Relations\HasOne;
+use Ironflow\Events\Dispatcher;
+use Ironflow\Support\Collection;
+use Ironflow\Support\Paginator;
 use DateTimeImmutable;
 
 /**
@@ -24,18 +24,18 @@ abstract class Model
 {
     // ─────────────────────── Config ──────────────────────────────────
 
-    protected string  $table        = '';
-    protected string  $primaryKey   = 'id';
-    protected bool    $incrementing = true;
-    protected array   $fillable     = [];
-    protected array   $guarded      = ['*'];
-    protected array   $hidden       = [];
-    protected array   $visible      = [];
-    protected array   $casts        = [];
-    protected array   $appends      = [];
-    protected bool    $timestamps   = true;
-    protected string  $createdAt    = 'created_at';
-    protected string  $updatedAt    = 'updated_at';
+    protected string $table = '';
+    protected string $primaryKey = 'id';
+    protected bool $incrementing = true;
+    protected array $fillable = [];
+    protected array $guarded = ['*'];
+    protected array $hidden = [];
+    protected array $visible = [];
+    protected array $casts = [];
+    protected array $appends = [];
+    protected bool $timestamps = true;
+    protected string $createdAt = 'created_at';
+    protected string $updatedAt = 'updated_at';
 
     /** @var array<string, callable> Global scopes applied to every query */
     protected static array $globalScopes = [];
@@ -43,9 +43,9 @@ abstract class Model
     // ─────────────────────── State ───────────────────────────────────
 
     private array $attributes = [];
-    private array $original   = [];
-    private array $relations  = [];
-    private bool  $exists     = false;
+    private array $original = [];
+    private array $relations = [];
+    private bool $exists = false;
 
     // ─────────────────────── Boot / instantiation ────────────────────
 
@@ -54,7 +54,9 @@ abstract class Model
         $this->fill($attributes);
     }
 
-    public static function boot(): void {}
+    public static function boot(): void
+    {
+    }
 
     protected static function getTable(): string
     {
@@ -141,7 +143,7 @@ abstract class Model
         // Lazy-load relation if method exists
         if (method_exists($this, $key)) {
             $relation = $this->$key();
-            if ($relation instanceof \Core\Database\Relations\Relation) {
+            if ($relation instanceof \Ironflow\Database\Relations\Relation) {
                 $result = $relation->getResults();
                 $this->relations[$key] = $result;
                 return $result;
@@ -193,15 +195,15 @@ abstract class Model
         }
 
         return match (true) {
-            $cast === 'int', $cast === 'integer'   => (int) $value,
-            $cast === 'float', $cast === 'double'  => (float) $value,
-            $cast === 'bool', $cast === 'boolean'  => (bool) $value,
-            $cast === 'string'                     => (string) $value,
-            $cast === 'array', $cast === 'json'    => is_string($value) ? json_decode($value, true) : $value,
-            $cast === 'datetime'                   => $value instanceof DateTimeImmutable ? $value : new DateTimeImmutable((string) $value),
-            str_starts_with($cast, 'encrypted')    => $this->decryptCast($value),
+            $cast === 'int', $cast === 'integer' => (int) $value,
+            $cast === 'float', $cast === 'double' => (float) $value,
+            $cast === 'bool', $cast === 'boolean' => (bool) $value,
+            $cast === 'string' => (string) $value,
+            $cast === 'array', $cast === 'json' => is_string($value) ? json_decode($value, true) : $value,
+            $cast === 'datetime' => $value instanceof DateTimeImmutable ? $value : new DateTimeImmutable((string) $value),
+            str_starts_with($cast, 'encrypted') => $this->decryptCast($value),
             // PHP native enum
-            enum_exists($cast)                     => $cast::from($value),
+            enum_exists($cast) => $cast::from($value),
             // Custom CastsAttributes
             class_exists($cast) && is_a($cast, CastsAttributes::class, true) => (new $cast())->get($this, $key, $value),
             default => $value,
@@ -216,10 +218,10 @@ abstract class Model
         }
 
         return match (true) {
-            $cast === 'array', $cast === 'json'                                => json_encode($value),
-            $cast === 'datetime'                                               => $value instanceof \DateTimeInterface ? $value->format('Y-m-d H:i:s') : $value,
-            str_starts_with($cast, 'encrypted')                               => $this->encryptCast($value),
-            is_object($value) && $value instanceof \BackedEnum             => $value->value,
+            $cast === 'array', $cast === 'json' => json_encode($value),
+            $cast === 'datetime' => $value instanceof \DateTimeInterface ? $value->format('Y-m-d H:i:s') : $value,
+            str_starts_with($cast, 'encrypted') => $this->encryptCast($value),
+            is_object($value) && $value instanceof \BackedEnum => $value->value,
             class_exists($cast) && is_a($cast, CastsAttributes::class, true) => (new $cast())->set($this, $key, $value),
             default => $value,
         };
@@ -232,8 +234,8 @@ abstract class Model
             return $value;
         }
         $decoded = base64_decode($value);
-        $iv      = substr($decoded, 0, 16);
-        $cipher  = substr($decoded, 16);
+        $iv = substr($decoded, 0, 16);
+        $cipher = substr($decoded, 16);
         return (string) openssl_decrypt($cipher, 'AES-256-CBC', $key, 0, $iv);
     }
 
@@ -243,7 +245,7 @@ abstract class Model
         if (empty($key)) {
             return $value;
         }
-        $iv     = random_bytes(16);
+        $iv = random_bytes(16);
         $cipher = (string) openssl_encrypt($value, 'AES-256-CBC', $key, 0, $iv);
         return base64_encode($iv . $cipher);
     }
@@ -308,7 +310,7 @@ abstract class Model
         }
 
         $this->original = $this->attributes;
-        $this->exists   = true;
+        $this->exists = true;
 
         $this->fireEvent('created');
         return true;
@@ -364,7 +366,7 @@ abstract class Model
         $fresh = static::find($this->getKey());
         if ($fresh) {
             $this->attributes = $fresh->attributes;
-            $this->original   = $fresh->original;
+            $this->original = $fresh->original;
         }
         return $this;
     }
@@ -395,7 +397,7 @@ abstract class Model
     {
         $model = static::find($id);
         if ($model === null) {
-            throw new \Core\Exceptions\HttpException(404, static::class . ' not found.');
+            throw new \Ironflow\Exceptions\HttpException(404, static::class . ' not found.');
         }
         return $model;
     }
@@ -414,7 +416,7 @@ abstract class Model
     {
         $model = static::first();
         if ($model === null) {
-            throw new \Core\Exceptions\HttpException(404, static::class . ' not found.');
+            throw new \Ironflow\Exceptions\HttpException(404, static::class . ' not found.');
         }
         return $model;
     }
@@ -490,25 +492,25 @@ abstract class Model
 
     protected function hasOne(string $related, ?string $foreignKey = null, ?string $localKey = null): HasOne
     {
-        $instance   = new $related();
+        $instance = new $related();
         $foreignKey = $foreignKey ?? static::getTable() . '_id';
-        $localKey   = $localKey   ?? $this->primaryKey;
+        $localKey = $localKey ?? $this->primaryKey;
         return new HasOne(static::getConnection(), $instance, $foreignKey, $localKey, $this->{$localKey});
     }
 
     protected function hasMany(string $related, ?string $foreignKey = null, ?string $localKey = null): HasMany
     {
-        $instance   = new $related();
+        $instance = new $related();
         $foreignKey = $foreignKey ?? static::getTable() . '_id';
-        $localKey   = $localKey   ?? $this->primaryKey;
+        $localKey = $localKey ?? $this->primaryKey;
         return new HasMany(static::getConnection(), $instance, $foreignKey, $localKey, $this->{$localKey});
     }
 
     protected function belongsTo(string $related, ?string $foreignKey = null, ?string $ownerKey = null): BelongsTo
     {
-        $instance   = new $related();
+        $instance = new $related();
         $foreignKey = $foreignKey ?? strtolower(class_basename($related)) . '_id';
-        $ownerKey   = $ownerKey   ?? $instance->primaryKey;
+        $ownerKey = $ownerKey ?? $instance->primaryKey;
         return new BelongsTo(static::getConnection(), $instance, $foreignKey, $ownerKey, $this->getAttribute($foreignKey));
     }
 
@@ -518,15 +520,18 @@ abstract class Model
         ?string $foreignPivotKey = null,
         ?string $relatedPivotKey = null
     ): BelongsToMany {
-        $instance        = new $related();
-        $tables          = [static::getTable(), $instance->getTableName()];
+        $instance = new $related();
+        $tables = [static::getTable(), $instance->getTableName()];
         sort($tables);
-        $pivotTable      = $pivotTable ?? implode('_', $tables);
+        $pivotTable = $pivotTable ?? implode('_', $tables);
         $foreignPivotKey = $foreignPivotKey ?? strtolower(class_basename(static::class)) . '_id';
         $relatedPivotKey = $relatedPivotKey ?? strtolower(class_basename($related)) . '_id';
         return new BelongsToMany(
-            static::getConnection(), $instance,
-            $pivotTable, $foreignPivotKey, $relatedPivotKey,
+            static::getConnection(),
+            $instance,
+            $pivotTable,
+            $foreignPivotKey,
+            $relatedPivotKey,
             $this->getKey()
         );
     }
@@ -541,14 +546,19 @@ abstract class Model
     ): HasManyThrough {
         $relatedInstance = new $related();
         $throughInstance = new $through();
-        $firstKey        = $firstKey       ?? strtolower(class_basename(static::class)) . '_id';
-        $secondKey       = $secondKey      ?? strtolower(class_basename($through)) . '_id';
-        $localKey        = $localKey       ?? $this->primaryKey;
-        $secondLocalKey  = $secondLocalKey ?? $throughInstance->primaryKey;
+        $firstKey = $firstKey ?? strtolower(class_basename(static::class)) . '_id';
+        $secondKey = $secondKey ?? strtolower(class_basename($through)) . '_id';
+        $localKey = $localKey ?? $this->primaryKey;
+        $secondLocalKey = $secondLocalKey ?? $throughInstance->primaryKey;
 
         return new HasManyThrough(
-            static::getConnection(), $relatedInstance, $throughInstance,
-            $firstKey, $secondKey, $localKey, $secondLocalKey,
+            static::getConnection(),
+            $relatedInstance,
+            $throughInstance,
+            $firstKey,
+            $secondKey,
+            $localKey,
+            $secondLocalKey,
             $this->{$localKey}
         );
     }
@@ -565,7 +575,7 @@ abstract class Model
             return true;
         }
 
-        $eventClass = 'Core\\Events\\Model\\' . ucfirst($event);
+        $eventClass = 'Ironflow\\Events\\Model\\' . ucfirst($event);
         if (!class_exists($eventClass)) {
             return true;
         }
@@ -578,7 +588,7 @@ abstract class Model
     public function toArray(): array
     {
         $result = [];
-        $attrs  = $this->attributes;
+        $attrs = $this->attributes;
 
         // Apply visible/hidden filters
         if (!empty($this->visible)) {

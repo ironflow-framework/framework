@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Core\Logging;
+namespace Ironflow\Logging;
 
 use Monolog\Handler\RotatingFileHandler;
 use Monolog\Handler\StreamHandler;

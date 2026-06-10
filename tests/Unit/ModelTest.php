@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Core\Tests\Unit;
+namespace Ironflow\Tests\Unit;
 
-use Core\Database\Connection;
-use Core\Database\Model;
+use Ironflow\Database\Connection;
+use Ironflow\Database\Model;
 use PHPUnit\Framework\TestCase;
 
 class ModelTest extends TestCase

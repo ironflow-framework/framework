@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Core\Console;
+namespace Ironflow\Console;
 
-use Core\Container;
-use Core\Module\ModuleManager;
+use Ironflow\Container;
+use Ironflow\Module\ModuleManager;
 use Symfony\Component\Console\Application as ConsoleApp;
 
 /**
@@ -18,7 +18,7 @@ class Kernel
 
     public function __construct(
         private readonly Container $container,
-        string $name    = 'IronFlow',
+        string $name = 'IronFlow',
         string $version = '0.1.0'
     ) {
         $this->console = new ConsoleApp($name, $version);
@@ -33,7 +33,8 @@ class Kernel
             foreach ($manager->getAllCommands() as $commandClass) {
                 $this->console->add($this->container->make($commandClass));
             }
-        } catch (\Throwable) {}
+        } catch (\Throwable) {
+        }
 
         return $this->console->run();
     }

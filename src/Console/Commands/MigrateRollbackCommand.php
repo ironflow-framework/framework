@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Core\Console\Commands;
+namespace Ironflow\Console\Commands;
 
-use Core\Console\Command;
-use Core\Database\Connection;
-use Core\Database\Migrations\Migrator;
+use Ironflow\Console\Command;
+use Ironflow\Database\Connection;
+use Ironflow\Database\Migrations\Migrator;
 
 class MigrateRollbackCommand extends Command
 {
-    protected string $signature   = 'migrate:rollback {--path=}';
+    protected string $signature = 'migrate:rollback {--path=}';
     protected string $description = 'Rollback the last batch of migrations';
 
     public function __construct(private readonly Connection $db)
@@ -20,7 +20,7 @@ class MigrateRollbackCommand extends Command
 
     protected function handle(): int
     {
-        $path     = $this->option('path') ?? base_path('modules');
+        $path = $this->option('path') ?? base_path('modules');
         $migrator = new Migrator($this->db);
 
         // Collect all migration paths

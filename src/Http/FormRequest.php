@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Core\Http;
+namespace Ironflow\Http;
 
-use Core\Exceptions\HttpException;
-use Core\Validation\ValidationException;
-use Core\Validation\ValidatorFactory;
+use Ironflow\Exceptions\HttpException;
+use Ironflow\Validation\ValidationException;
+use Ironflow\Validation\ValidatorFactory;
 
 /**
  * Base class for typed, auto-validated form/API requests.
@@ -21,7 +21,7 @@ use Core\Validation\ValidatorFactory;
  */
 abstract class FormRequest extends Request
 {
-    private bool  $isValidated   = false;
+    private bool $isValidated = false;
     private array $validatedData = [];
 
     // ── Contract ──────────────────────────────────────────────────────
@@ -40,7 +40,9 @@ abstract class FormRequest extends Request
     }
 
     /** Hook called before validation — mutate $this->merge() or skip fields. */
-    public function prepareForValidation(): void {}
+    public function prepareForValidation(): void
+    {
+    }
 
     // ── Auto-validation ───────────────────────────────────────────────
 
@@ -60,15 +62,15 @@ abstract class FormRequest extends Request
 
         $this->prepareForValidation();
 
-        $data      = $this->isJson() ? array_merge($this->all(), (array) $this->json()) : $this->all();
-        $factory   = new ValidatorFactory();
+        $data = $this->isJson() ? array_merge($this->all(), (array) $this->json()) : $this->all();
+        $factory = new ValidatorFactory();
         $validator = $factory->make($data, $this->rules(), $this->messages());
 
         if ($validator->fails()) {
             throw new ValidationException($validator);
         }
 
-        $this->isValidated   = true;
+        $this->isValidated = true;
         $this->validatedData = $validator->validated();
     }
 

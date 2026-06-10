@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Core\Database\Relations;
+namespace Ironflow\Database\Relations;
 
-use Core\Database\Connection;
-use Core\Database\Model;
-use Core\Database\ModelQueryBuilder;
-use Core\Support\Collection;
+use Ironflow\Database\Connection;
+use Ironflow\Database\Model;
+use Ironflow\Database\ModelQueryBuilder;
+use Ironflow\Support\Collection;
 
 /**
  * Many-to-many relation via a pivot table.
@@ -19,7 +19,7 @@ class BelongsToMany extends Relation
 
     public function __construct(
         Connection $connection,
-        Model      $related,
+        Model $related,
         private readonly string $pivotTable,
         private readonly string $foreignPivotKey,
         private readonly string $relatedPivotKey,
@@ -40,8 +40,8 @@ class BelongsToMany extends Relation
             return new Collection();
         }
 
-        $table   = $this->related->getTableName();
-        $class   = get_class($this->related);
+        $table = $this->related->getTableName();
+        $class = get_class($this->related);
         $pivotCols = $this->pivotColumns ? ', ' . implode(', ', array_map(
             fn($c) => "{$this->pivotTable}.{$c} as pivot_{$c}",
             $this->pivotColumns
@@ -126,8 +126,8 @@ class BelongsToMany extends Relation
     public function toggle(array $ids): void
     {
         $current = $this->getResults()->pluck('id')->toArray();
-        $attach  = array_diff($ids, $current);
-        $detach  = array_intersect($current, $ids);
+        $attach = array_diff($ids, $current);
+        $detach = array_intersect($current, $ids);
         $this->attach($attach);
         $this->detach($detach);
     }

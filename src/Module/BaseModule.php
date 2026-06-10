@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Core\Module;
+namespace Ironflow\Module;
 
-use Core\Container;
-use Core\Events\Dispatcher;
-use Core\Routing\Router;
-use Core\Template\Engine;
+use Ironflow\Container;
+use Ironflow\Events\Dispatcher;
+use Ironflow\Routing\Router;
+use Ironflow\Template\Engine;
 
 /**
  * Base class for all application modules.
@@ -18,23 +18,27 @@ use Core\Template\Engine;
 abstract class BaseModule
 {
     protected Container $container;
-    protected Router    $router;
+    protected Router $router;
     protected Dispatcher $events;
-    protected Engine    $view;
+    protected Engine $view;
 
     public function setContainer(Container $container): void
     {
         $this->container = $container;
-        $this->router    = $container->make(Router::class);
-        $this->events    = $container->make(Dispatcher::class);
-        $this->view      = $container->make(Engine::class);
+        $this->router = $container->make(Router::class);
+        $this->events = $container->make(Dispatcher::class);
+        $this->view = $container->make(Engine::class);
     }
 
     /** Phase 1: register service bindings into the container. */
-    public function register(): void {}
+    public function register(): void
+    {
+    }
 
     /** Phase 2: load routes, view namespaces, listeners, etc. */
-    public function boot(): void {}
+    public function boot(): void
+    {
+    }
 
     /** Called by ModuleManager to load routes from the module's routes.php. */
     public function loadRoutes(string $routesFile): void

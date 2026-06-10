@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Core\Template;
+namespace Ironflow\Template;
 
-use Core\Container;
+use Ironflow\Container;
 use Twig\Environment;
 use Twig\Loader\FilesystemLoader;
 use Twig\TwigFunction;
 
 /**
  * Twig engine wrapper. Manages namespaces, view composers, and global data.
- * App code only ever imports Core\Template\Engine — never Twig directly.
+ * App code only ever imports Ironflow\Template\Engine — never Twig directly.
  */
 class Engine
 {
@@ -44,9 +44,9 @@ class Engine
         }
 
         $this->twig = new Environment($this->loader, [
-            'cache'            => $debug ? false : $cachePath,
-            'auto_reload'      => true,
-            'debug'            => $debug,
+            'cache' => $debug ? false : $cachePath,
+            'auto_reload' => true,
+            'debug' => $debug,
             'strict_variables' => $debug,
         ]);
 

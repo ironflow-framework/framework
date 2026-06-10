@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Core\Database;
+namespace Ironflow\Database;
 
-use Core\Support\Collection;
+use Ironflow\Support\Collection;
 
 /**
  * Model factory base class with a minimal built-in fake data generator.
@@ -12,8 +12,8 @@ use Core\Support\Collection;
  */
 abstract class Factory
 {
-    private int    $count = 1;
-    private array  $overrides = [];
+    private int $count = 1;
+    private array $overrides = [];
     private ?string $modelClass = null;
 
     abstract public function definition(): array;
@@ -25,14 +25,14 @@ abstract class Factory
 
     public function count(int $n): static
     {
-        $clone        = clone $this;
+        $clone = clone $this;
         $clone->count = $n;
         return $clone;
     }
 
     public function state(array $attributes): static
     {
-        $clone            = clone $this;
+        $clone = clone $this;
         $clone->overrides = array_merge($clone->overrides, $attributes);
         return $clone;
     }
@@ -48,11 +48,11 @@ abstract class Factory
 
     public function create(array $extra = []): Collection
     {
-        $models  = [];
-        $class   = $this->resolveModelClass();
+        $models = [];
+        $class = $this->resolveModelClass();
 
         for ($i = 0; $i < $this->count; $i++) {
-            $data   = array_merge($this->definition(), $this->overrides, $extra);
+            $data = array_merge($this->definition(), $this->overrides, $extra);
             $models[] = $class::create($data);
         }
 
@@ -66,7 +66,7 @@ abstract class Factory
         }
         // Guess from factory name: PostFactory → Post (same namespace)
         $factoryClass = static::class;
-        $modelClass   = str_replace(['Factories\\', 'Factory'], ['Models\\', ''], $factoryClass);
+        $modelClass = str_replace(['Factories\\', 'Factory'], ['Models\\', ''], $factoryClass);
         return $modelClass;
     }
 

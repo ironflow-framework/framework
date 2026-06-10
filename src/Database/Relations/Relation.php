@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Core\Database\Relations;
+namespace Ironflow\Database\Relations;
 
-use Core\Database\Connection;
-use Core\Database\Model;
-use Core\Support\Collection;
+use Ironflow\Database\Connection;
+use Ironflow\Database\Model;
+use Ironflow\Support\Collection;
 
 /**
  * Base class for all ORM relations.
@@ -15,11 +15,12 @@ abstract class Relation
 {
     public function __construct(
         protected Connection $connection,
-        protected Model      $related,
-        protected string     $foreignKey,
-        protected string     $localKey,
-        protected mixed      $parentKeyValue
-    ) {}
+        protected Model $related,
+        protected string $foreignKey,
+        protected string $localKey,
+        protected mixed $parentKeyValue
+    ) {
+    }
 
     abstract public function getResults(): mixed;
 
@@ -40,7 +41,7 @@ abstract class Relation
     public function eagerLoadCount(Collection $models, string $countKey): void
     {
         $table = $this->related->getTableName();
-        $ids   = $models->pluck($this->localKey)->filter()->toArray();
+        $ids = $models->pluck($this->localKey)->filter()->toArray();
 
         if (empty($ids)) {
             return;

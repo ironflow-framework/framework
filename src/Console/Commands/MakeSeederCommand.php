@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Core\Console\Commands;
+namespace Ironflow\Console\Commands;
 
-use Core\Console\Command;
+use Ironflow\Console\Command;
 
 class MakeSeederCommand extends Command
 {
-    protected string $signature   = 'make:seeder {name} {--module=}';
+    protected string $signature = 'make:seeder {name} {--module=}';
     protected string $description = 'Create a new database seeder class';
 
     protected function handle(): int
     {
-        $name   = (string) $this->argument('name');
+        $name = (string) $this->argument('name');
         $module = $this->option('module');
 
         $path = $module
@@ -30,7 +30,7 @@ declare(strict_types=1);
 
 namespace {$ns};
 
-use Core\\Database\\Seeder;
+use Ironflow\\Database\\Seeder;
 
 class {$name} extends Seeder
 {

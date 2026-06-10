@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Core\Routing;
+namespace Ironflow\Routing;
 
-use Core\Exceptions\HttpException;
+use Ironflow\Exceptions\HttpException;
 
 /**
  * Holds all registered routes and finds the best match for a request.
@@ -31,7 +31,7 @@ class RouteCollection
     public function setName(string $method, string $name): void
     {
         $method = strtoupper($method);
-        $last   = end($this->routes[$method] ?? []);
+        $last = end($this->routes[$method] ?? []);
         if ($last instanceof Route) {
             $last->name($name);
             $this->named[$name] = $last;

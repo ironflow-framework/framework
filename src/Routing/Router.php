@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Core\Routing;
+namespace Ironflow\Routing;
 
-use Core\Container;
-use Core\Exceptions\HttpException;
-use Core\Http\FormRequest;
-use Core\Http\Request;
-use Core\Middleware\Pipeline;
+use Ironflow\Container;
+use Ironflow\Exceptions\HttpException;
+use Ironflow\Http\FormRequest;
+use Ironflow\Http\Request;
+use Ironflow\Middleware\Pipeline;
 use ReflectionMethod;
 use ReflectionNamedType;
 use ReflectionParameter;
@@ -86,16 +86,16 @@ class Router
     public function resource(string $name, string $controller): void
     {
         $singular = rtrim($name, 's');
-        $prefix   = '/' . ltrim($name, '/');
+        $prefix = '/' . ltrim($name, '/');
 
-        $this->get("{$prefix}",                    [$controller, 'index'])->name("{$name}.index");
-        $this->get("{$prefix}/create",             [$controller, 'create'])->name("{$name}.create");
-        $this->post("{$prefix}",                   [$controller, 'store'])->name("{$name}.store");
-        $this->get("{$prefix}/{{$singular}}",      [$controller, 'show'])->name("{$name}.show");
+        $this->get("{$prefix}", [$controller, 'index'])->name("{$name}.index");
+        $this->get("{$prefix}/create", [$controller, 'create'])->name("{$name}.create");
+        $this->post("{$prefix}", [$controller, 'store'])->name("{$name}.store");
+        $this->get("{$prefix}/{{$singular}}", [$controller, 'show'])->name("{$name}.show");
         $this->get("{$prefix}/{{$singular}}/edit", [$controller, 'edit'])->name("{$name}.edit");
-        $this->put("{$prefix}/{{$singular}}",      [$controller, 'update'])->name("{$name}.update");
-        $this->patch("{$prefix}/{{$singular}}",    [$controller, 'update']);
-        $this->delete("{$prefix}/{{$singular}}",   [$controller, 'destroy'])->name("{$name}.destroy");
+        $this->put("{$prefix}/{{$singular}}", [$controller, 'update'])->name("{$name}.update");
+        $this->patch("{$prefix}/{{$singular}}", [$controller, 'update']);
+        $this->delete("{$prefix}/{{$singular}}", [$controller, 'destroy'])->name("{$name}.destroy");
     }
 
     // ─────────────────────── URL generation ──────────────────────────
@@ -150,7 +150,7 @@ class Router
 
     private function addRoute(string $method, string $uri, mixed $action): Route
     {
-        $uri    = $this->applyGroupPrefix($uri);
+        $uri = $this->applyGroupPrefix($uri);
         $action = $this->applyGroupNamespace($action);
 
         $route = new Route($method, $uri, $action);
@@ -266,8 +266,8 @@ class Router
             return $result;
         }
         if (is_array($result) || is_object($result)) {
-            return new \Core\Http\JsonResponse($result);
+            return new \Ironflow\Http\JsonResponse($result);
         }
-        return new \Core\Http\Response((string) $result, 200, ['Content-Type' => 'text/html; charset=UTF-8']);
+        return new \Ironflow\Http\Response((string) $result, 200, ['Content-Type' => 'text/html; charset=UTF-8']);
     }
 }

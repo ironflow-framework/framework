@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Core\Console\Commands;
+namespace Ironflow\Console\Commands;
 
-use Core\Console\Command;
+use Ironflow\Console\Command;
 
 class MakeListenerCommand extends Command
 {
-    protected string $signature   = 'make:listener {name} {--event=} {--module=}';
+    protected string $signature = 'make:listener {name} {--event=} {--module=}';
     protected string $description = 'Create a new event listener class';
 
     protected function handle(): int
     {
-        $name   = (string) $this->argument('name');
-        $event  = $this->option('event') ?? 'SomeEvent';
+        $name = (string) $this->argument('name');
+        $event = $this->option('event') ?? 'SomeEvent';
         $module = $this->option('module');
 
         $path = $module

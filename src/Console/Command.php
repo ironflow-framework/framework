@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Core\Console;
+namespace Ironflow\Console;
 
 use Symfony\Component\Console\Command\Command as SymfonyCommand;
 use Symfony\Component\Console\Input\InputArgument;
@@ -19,8 +19,8 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  */
 abstract class Command extends SymfonyCommand
 {
-    protected string $signature    = '';
-    protected string $description  = '';
+    protected string $signature = '';
+    protected string $description = '';
     protected SymfonyStyle $io;
 
     protected function configure(): void
@@ -53,11 +53,26 @@ abstract class Command extends SymfonyCommand
         return $this->io->getInput()->getOption($name);
     }
 
-    protected function info(string $message): void    { $this->io->writeln("<info>{$message}</info>"); }
-    protected function warn(string $message): void    { $this->io->writeln("<comment>{$message}</comment>"); }
-    protected function error(string $message): void   { $this->io->writeln("<error>{$message}</error>"); }
-    protected function success(string $message): void { $this->io->writeln("<info>✓ {$message}</info>"); }
-    protected function line(string $message): void    { $this->io->writeln($message); }
+    protected function info(string $message): void
+    {
+        $this->io->writeln("<info>{$message}</info>");
+    }
+    protected function warn(string $message): void
+    {
+        $this->io->writeln("<comment>{$message}</comment>");
+    }
+    protected function error(string $message): void
+    {
+        $this->io->writeln("<error>{$message}</error>");
+    }
+    protected function success(string $message): void
+    {
+        $this->io->writeln("<info>✓ {$message}</info>");
+    }
+    protected function line(string $message): void
+    {
+        $this->io->writeln($message);
+    }
 
     protected function ask(string $question, ?string $default = null): string
     {
@@ -117,12 +132,12 @@ abstract class Command extends SymfonyCommand
             [$token, $description] = explode(':', $token, 2);
         }
 
-        $mode    = InputArgument::REQUIRED;
+        $mode = InputArgument::REQUIRED;
         $default = null;
 
         if (str_ends_with($token, '?')) {
             $token = rtrim($token, '?');
-            $mode  = InputArgument::OPTIONAL;
+            $mode = InputArgument::OPTIONAL;
         } elseif (str_contains($token, '=')) {
             [$token, $default] = explode('=', $token, 2);
             $mode = InputArgument::OPTIONAL;
@@ -138,12 +153,12 @@ abstract class Command extends SymfonyCommand
             [$token, $description] = explode(':', $token, 2);
         }
 
-        $mode    = InputOption::VALUE_NONE;
+        $mode = InputOption::VALUE_NONE;
         $default = null;
 
         if (str_ends_with($token, '=')) {
             $token = rtrim($token, '=');
-            $mode  = InputOption::VALUE_OPTIONAL;
+            $mode = InputOption::VALUE_OPTIONAL;
         } elseif (str_contains($token, '=')) {
             [$token, $default] = explode('=', $token, 2);
             $mode = InputOption::VALUE_OPTIONAL;

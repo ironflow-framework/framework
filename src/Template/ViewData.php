@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Core\Template;
+namespace Ironflow\Template;
 
 /**
  * Passed to view composers so they can inject data via $view->with('key', $value).

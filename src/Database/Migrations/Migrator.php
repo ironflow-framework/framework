@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Core\Database\Migrations;
+namespace Ironflow\Database\Migrations;
 
-use Core\Database\Connection;
-use Core\Database\Schema\Schema;
+use Ironflow\Database\Connection;
+use Ironflow\Database\Schema\Schema;
 
 /**
  * Discovers, runs, and rolls back migrations.
@@ -29,7 +29,7 @@ class Migrator
         }
 
         $batch = $this->getLastBatch() + 1;
-        $ran   = [];
+        $ran = [];
 
         foreach ($pending as $file) {
             $class = $this->classFromFile($file);
@@ -40,8 +40,8 @@ class Migrator
 
             $this->db->insert('migrations', [
                 'migration' => basename($file, '.php'),
-                'batch'     => $batch,
-                'ran_at'    => date('Y-m-d H:i:s'),
+                'batch' => $batch,
+                'ran_at' => date('Y-m-d H:i:s'),
             ]);
 
             $ran[] = basename($file);
@@ -65,7 +65,7 @@ class Migrator
         $rolledBack = [];
 
         foreach ($rows as $row) {
-            $file  = $path . '/' . $row['migration'] . '.php';
+            $file = $path . '/' . $row['migration'] . '.php';
             if (!is_file($file)) {
                 continue;
             }
@@ -95,11 +95,11 @@ class Migrator
         $status = [];
 
         foreach ($files as $file) {
-            $name   = basename($file, '.php');
+            $name = basename($file, '.php');
             $status[] = [
                 'migration' => $name,
-                'ran'       => isset($ran[$name]),
-                'batch'     => $ran[$name]['batch'] ?? null,
+                'ran' => isset($ran[$name]),
+                'batch' => $ran[$name]['batch'] ?? null,
             ];
         }
 
@@ -109,10 +109,11 @@ class Migrator
     public function fresh(string $path): array
     {
         // Drop all tables then re-run migrations
-        $sm     = $this->db->getSchemaManager();
+        $sm = $this->db->getSchemaManager();
         $tables = $sm->listTableNames();
         foreach (array_reverse($tables) as $table) {
-            if ($table === 'migrations') continue;
+            if ($table === 'migrations')
+                continue;
             Schema::drop($table);
         }
         $this->db->statement('DELETE FROM migrations');
@@ -122,7 +123,7 @@ class Migrator
 
     private function getPendingMigrations(string $path): array
     {
-        $ran   = array_column($this->db->select('SELECT migration FROM migrations'), 'migration');
+        $ran = array_column($this->db->select('SELECT migration FROM migrations'), 'migration');
         $files = $this->getMigrationFiles($path);
 
         return array_filter($files, function ($file) use ($ran) {

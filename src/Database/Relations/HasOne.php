@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Core\Database\Relations;
+namespace Ironflow\Database\Relations;
 
-use Core\Database\ModelQueryBuilder;
-use Core\Database\Model;
-use Core\Support\Collection;
+use Ironflow\Database\ModelQueryBuilder;
+use Ironflow\Database\Model;
+use Ironflow\Support\Collection;
 
 /**
  * One-to-one relation: a User hasOne Profile.
@@ -33,7 +33,7 @@ class HasOne extends Relation
         }
 
         $class = get_class($this->related);
-        $qb    = (new ModelQueryBuilder($this->connection, $this->related->getTableName(), $class))
+        $qb = (new ModelQueryBuilder($this->connection, $this->related->getTableName(), $class))
             ->whereIn($this->foreignKey, $keys);
 
         if ($constraint !== null) {

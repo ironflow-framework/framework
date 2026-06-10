@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Core\Console\Commands;
+namespace Ironflow\Console\Commands;
 
-use Core\Console\Command;
+use Ironflow\Console\Command;
 
 class MakeMigrationCommand extends Command
 {
-    protected string $signature   = 'make:migration {name} {--module=}';
+    protected string $signature = 'make:migration {name} {--module=}';
     protected string $description = 'Create a new migration file';
 
     protected function handle(): int
     {
-        $name   = str_replace(' ', '_', strtolower((string) $this->argument('name')));
+        $name = str_replace(' ', '_', strtolower((string) $this->argument('name')));
         $module = $this->option('module');
-        $stamp  = date('Y_m_d_His');
-        $file   = "{$stamp}_{$name}.php";
+        $stamp = date('Y_m_d_His');
+        $file = "{$stamp}_{$name}.php";
 
         $path = $module
             ? base_path("modules/{$module}/Database/Migrations/{$file}")
@@ -24,17 +24,17 @@ class MakeMigrationCommand extends Command
 
         @mkdir(dirname($path), 0755, true);
 
-        $class   = implode('', array_map('ucfirst', explode('_', $name)));
-        $table   = preg_replace('/^(create|add|drop)_(.+?)(_table)?$/', '$2', $name);
+        $class = implode('', array_map('ucfirst', explode('_', $name)));
+        $table = preg_replace('/^(create|add|drop)_(.+?)(_table)?$/', '$2', $name);
 
         file_put_contents($path, <<<PHP
 <?php
 
 declare(strict_types=1);
 
-use Core\\Database\\Migrations\\Migration;
-use Core\\Database\\Schema\\Schema;
-use Core\\Database\\Schema\\Blueprint;
+use Ironflow\\Database\\Migrations\\Migration;
+use Ironflow\\Database\\Schema\\Schema;
+use Ironflow\\Database\\Schema\\Blueprint;
 
 class {$class} extends Migration
 {

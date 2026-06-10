@@ -2,25 +2,25 @@
 
 declare(strict_types=1);
 
-namespace Core\Console\Commands;
+namespace Ironflow\Console\Commands;
 
-use Core\Console\Command;
+use Ironflow\Console\Command;
 
 class MakeComponentCommand extends Command
 {
-    protected string $signature   = 'make:component {name : Component name in PascalCase (e.g. Alert)} {--module= : Target module}';
+    protected string $signature = 'make:component {name : Component name in PascalCase (e.g. Alert)} {--module= : Target module}';
     protected string $description = 'Create a new view Component class and its Twig template';
 
     public function handle(): int
     {
-        $name   = (string) $this->argument('name');
+        $name = (string) $this->argument('name');
         $module = (string) $this->option('module');
-        $slug   = $this->toKebab($name);
+        $slug = $this->toKebab($name);
 
         [$phpNs, $phpDir, $viewDir] = $this->resolvePaths($name, $module);
 
-        $phpFile  = $phpDir  . '/' . $name . 'Component.php';
-        $tplFile  = $viewDir . '/' . $slug . '.html.twig';
+        $phpFile = $phpDir . '/' . $name . 'Component.php';
+        $tplFile = $viewDir . '/' . $slug . '.html.twig';
 
         foreach ([$phpDir, $viewDir] as $dir) {
             if (!is_dir($dir)) {
@@ -48,12 +48,12 @@ class MakeComponentCommand extends Command
     private function resolvePaths(string $name, string $module): array
     {
         if ($module) {
-            $ns      = "Modules\\{$module}\\View\\Components";
-            $phpDir  = base_path("modules/{$module}/View/Components");
+            $ns = "Modules\\{$module}\\View\\Components";
+            $phpDir = base_path("modules/{$module}/View/Components");
             $viewDir = base_path("modules/{$module}/Views/components");
         } else {
-            $ns      = 'App\\View\\Components';
-            $phpDir  = base_path('app/View/Components');
+            $ns = 'App\\View\\Components';
+            $phpDir = base_path('app/View/Components');
             $viewDir = base_path('resources/views/components');
         }
 
@@ -76,7 +76,7 @@ declare(strict_types=1);
 
 namespace {$namespace};
 
-use Core\Template\Component;
+use Ironflow\Template\Component;
 
 class {$name}Component extends Component
 {

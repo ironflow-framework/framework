@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Core\Database;
+namespace Ironflow\Database;
 
 /**
  * Interface for custom attribute casts.

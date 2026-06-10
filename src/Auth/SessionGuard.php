@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Core\Auth;
+namespace Ironflow\Auth;
 
-use Core\Database\Connection;
-use Core\Session\SessionManager;
+use Ironflow\Database\Connection;
+use Ironflow\Session\SessionManager;
 
 /**
  * Session-based authentication guard.
@@ -19,7 +19,8 @@ class SessionGuard implements GuardInterface
         private readonly SessionManager $session,
         private readonly Connection $db,
         private readonly array $config
-    ) {}
+    ) {
+    }
 
     public function check(): bool
     {
@@ -38,7 +39,7 @@ class SessionGuard implements GuardInterface
         }
 
         $table = $this->config['table'] ?? 'users';
-        $row   = $this->db->selectOne("SELECT * FROM {$table} WHERE id = ?", [$id]);
+        $row = $this->db->selectOne("SELECT * FROM {$table} WHERE id = ?", [$id]);
 
         if ($row === null) {
             $this->session->forget('auth_user_id');
@@ -56,7 +57,7 @@ class SessionGuard implements GuardInterface
 
     public function attempt(array $credentials): bool
     {
-        $table    = $this->config['table'] ?? 'users';
+        $table = $this->config['table'] ?? 'users';
         $username = $this->config['username'] ?? 'email';
 
         $row = $this->db->selectOne(

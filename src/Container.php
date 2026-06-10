@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Core;
 
-use Core\Attributes\Inject;
-use Core\Exceptions\ContainerException;
+use Ironflow\Attributes\Inject;
+use Ironflow\Exceptions\ContainerException;
 use ReflectionClass;
 use ReflectionException;
 use ReflectionNamedType;
@@ -45,7 +45,7 @@ class Container
         }
 
         $this->bindings[$abstract] = [
-            'factory'   => $concrete,
+            'factory' => $concrete,
             'singleton' => $singleton,
         ];
 
@@ -198,7 +198,7 @@ class Container
         if (str_starts_with($key, 'config.')) {
             $configKey = substr($key, 7);
             /** @var Config\Repository $config */
-            $config = $this->make(\Core\Config\Repository::class);
+            $config = $this->make(\Ironflow\Config\Repository::class);
             return $config->get($configKey);
         }
 

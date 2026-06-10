@@ -370,7 +370,7 @@ class SeedBlogCommand extends BaseCommand
 | `firebase/php-jwt` — tokens JWT | Extension Twig, scaffolding CLI complet |
 | `vlucas/phpdotenv` — variables d'env | Auth session + JWT, validation, CSRF |
 
-Chaque composant externe est **wrappé derrière nos propres interfaces** dans `Ironflow\Core\`. Ton code n'importe jamais `Symfony\Component\HttpFoundation\Request` — seulement `Ironflow\Core\Http\Request`.
+Chaque composant externe est **wrappé derrière nos propres interfaces** dans `Ironflow\Ironflow\`. Ton code n'importe jamais `Symfony\Component\HttpFoundation\Request` — seulement `Ironflow\Ironflow\Http\Request`.
 
 ---
 

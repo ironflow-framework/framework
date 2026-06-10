@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Core\Auth;
+namespace Ironflow\Auth;
 
-use Core\Database\Connection;
-use Core\Http\Request;
+use Ironflow\Database\Connection;
+use Ironflow\Http\Request;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Throwable;
@@ -23,13 +23,14 @@ class JwtGuard implements GuardInterface
         private readonly Connection $db,
         private readonly array $config,
         private ?Request $request = null
-    ) {}
+    ) {
+    }
 
     public function setRequest(Request $request): void
     {
-        $this->request   = $request;
-        $this->user      = null;
-        $this->resolved  = false;
+        $this->request = $request;
+        $this->user = null;
+        $this->resolved = false;
     }
 
     public function check(): bool
@@ -51,11 +52,11 @@ class JwtGuard implements GuardInterface
         }
 
         try {
-            $secret  = $this->config['secret'] ?? $_ENV['JWT_SECRET'] ?? '';
+            $secret = $this->config['secret'] ?? $_ENV['JWT_SECRET'] ?? '';
             $decoded = JWT::decode($token, new Key($secret, 'HS256'));
 
             $table = $this->config['table'] ?? 'users';
-            $row   = $this->db->selectOne("SELECT * FROM {$table} WHERE id = ?", [$decoded->sub]);
+            $row = $this->db->selectOne("SELECT * FROM {$table} WHERE id = ?", [$decoded->sub]);
 
             $this->user = $row ? (object) $row : null;
         } catch (Throwable) {
@@ -88,8 +89,8 @@ class JwtGuard implements GuardInterface
     public function createToken(object $user, array $claims = []): string
     {
         $secret = $this->config['secret'] ?? $_ENV['JWT_SECRET'] ?? '';
-        $ttl    = (int) ($this->config['ttl'] ?? $_ENV['JWT_TTL'] ?? 3600);
-        $now    = time();
+        $ttl = (int) ($this->config['ttl'] ?? $_ENV['JWT_TTL'] ?? 3600);
+        $now = time();
 
         $payload = array_merge([
             'iss' => $_ENV['APP_URL'] ?? 'ironflow',

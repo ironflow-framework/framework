@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Core\Http;
+namespace Ironflow\Http;
 
-use Core\Validation\ValidatorFactory;
+use Ironflow\Validation\ValidatorFactory;
 use Symfony\Component\HttpFoundation\Request as SymfonyRequest;
 
 /**
@@ -110,7 +110,7 @@ class Request extends SymfonyRequest
         $validator = $factory->make($this->all(), $rules, $messages);
 
         if ($validator->fails()) {
-            throw new \Core\Validation\ValidationException($validator);
+            throw new \Ironflow\Validation\ValidationException($validator);
         }
 
         $this->validatedData = $validator->validated();

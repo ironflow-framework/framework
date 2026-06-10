@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Core\Http;
+namespace Ironflow\Http;
 
-use Core\Container;
-use Core\Exceptions\Handler as ExceptionHandler;
-use Core\Exceptions\HttpException;
-use Core\Middleware\Pipeline;
-use Core\Routing\Router;
-use Core\Session\SessionManager;
+use Ironflow\Container;
+use Ironflow\Exceptions\Handler as ExceptionHandler;
+use Ironflow\Exceptions\HttpException;
+use Ironflow\Middleware\Pipeline;
+use Ironflow\Routing\Router;
+use Ironflow\Session\SessionManager;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 use Throwable;
 
@@ -24,7 +24,8 @@ class Kernel
         private readonly Router $router,
         private readonly array $middlewareConfig,
         private readonly ExceptionHandler $exceptionHandler
-    ) {}
+    ) {
+    }
 
     public function handle(Request $request): SymfonyResponse
     {
@@ -32,7 +33,7 @@ class Kernel
             $this->bootSession($request);
 
             $globalMiddlewares = $this->middlewareConfig['global'] ?? [];
-            $aliases           = $this->middlewareConfig['aliases'] ?? [];
+            $aliases = $this->middlewareConfig['aliases'] ?? [];
 
             $this->router->setMiddlewareAliases($aliases);
 

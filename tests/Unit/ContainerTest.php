@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Core\Tests\Unit;
+namespace Ironflow\Tests\Unit;
 
-use Core\Container;
-use Core\Exceptions\ContainerException;
+use Ironflow\Container;
+use Ironflow\Exceptions\ContainerException;
 use PHPUnit\Framework\TestCase;
 
 class ContainerTest extends TestCase
@@ -77,9 +77,13 @@ class ContainerTest extends TestCase
 
 // ── Inline fixtures ───────────────────────────────────────────────────────────
 
-class SimpleService {}
+class SimpleService
+{
+}
 
 class ServiceWithDep
 {
-    public function __construct(public readonly SimpleService $dep) {}
+    public function __construct(public readonly SimpleService $dep)
+    {
+    }
 }

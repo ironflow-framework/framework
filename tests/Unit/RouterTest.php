@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Core\Tests\Unit;
+namespace Ironflow\Tests\Unit;
 
-use Core\Container;
-use Core\Exceptions\HttpException;
-use Core\Routing\Route;
-use Core\Routing\Router;
+use Ironflow\Container;
+use Ironflow\Exceptions\HttpException;
+use Ironflow\Routing\Route;
+use Ironflow\Routing\Router;
 use PHPUnit\Framework\TestCase;
 
 class RouterTest extends TestCase
@@ -102,8 +102,15 @@ class RouterTest extends TestCase
     public function test_resource_generates_seven_routes(): void
     {
         $this->router->resource('articles', RouterArticleStub::class);
-        $names = ['articles.index', 'articles.create', 'articles.store',
-                  'articles.show', 'articles.edit', 'articles.update', 'articles.destroy'];
+        $names = [
+            'articles.index',
+            'articles.create',
+            'articles.store',
+            'articles.show',
+            'articles.edit',
+            'articles.update',
+            'articles.destroy'
+        ];
         foreach ($names as $name) {
             $this->assertNotNull(
                 $this->router->getRoutes()->getByName($name),
@@ -122,11 +129,25 @@ class RouterTest extends TestCase
 
 class RouterArticleStub
 {
-    public function index(): void {}
-    public function create(): void {}
-    public function store(): void {}
-    public function show(): void {}
-    public function edit(): void {}
-    public function update(): void {}
-    public function destroy(): void {}
+    public function index(): void
+    {
+    }
+    public function create(): void
+    {
+    }
+    public function store(): void
+    {
+    }
+    public function show(): void
+    {
+    }
+    public function edit(): void
+    {
+    }
+    public function update(): void
+    {
+    }
+    public function destroy(): void
+    {
+    }
 }

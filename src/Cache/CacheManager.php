@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Core\Cache;
+namespace Ironflow\Cache;
 
-use Core\Application;
+use Ironflow\Application;
 
 /**
  * Simple file-based cache. Uses APCu when available, otherwise stores
@@ -51,7 +51,7 @@ class CacheManager
         }
 
         file_put_contents($this->filepath($key), serialize([
-            'value'   => $value,
+            'value' => $value,
             'expires' => $ttl > 0 ? time() + $ttl : 0,
         ]));
     }

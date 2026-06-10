@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Core\Auth;
+namespace Ironflow\Auth;
 
-use Core\Database\Connection;
-use Core\Session\SessionManager;
+use Ironflow\Database\Connection;
+use Ironflow\Session\SessionManager;
 
 /**
  * Manages multiple auth guards (session + jwt).
@@ -82,8 +82,8 @@ class AuthManager
 
         return match ($guardConfig['driver'] ?? $name) {
             'session' => new SessionGuard($this->session, $this->db, $guardConfig),
-            'jwt'     => new JwtGuard($this->db, $guardConfig),
-            default   => throw new \InvalidArgumentException("Unknown auth guard driver [{$name}]."),
+            'jwt' => new JwtGuard($this->db, $guardConfig),
+            default => throw new \InvalidArgumentException("Unknown auth guard driver [{$name}]."),
         };
     }
 }

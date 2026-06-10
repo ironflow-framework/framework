@@ -2,18 +2,22 @@
 
 declare(strict_types=1);
 
-namespace Core\Tests\Unit;
+namespace Ironflow\Tests\Unit;
 
-use Core\Container;
-use Core\Events\Dispatcher;
+use Ironflow\Container;
+use Ironflow\Events\Dispatcher;
 use PHPUnit\Framework\TestCase;
 
 final class SomethingHappened
 {
-    public function __construct(public readonly string $payload) {}
+    public function __construct(public readonly string $payload)
+    {
+    }
 }
 
-final class SomethingElse {}
+final class SomethingElse
+{
+}
 
 class EventDispatcherTest extends TestCase
 {
@@ -37,8 +41,10 @@ class EventDispatcherTest extends TestCase
     public function test_multiple_listeners_all_called(): void
     {
         $log = [];
-        $this->dispatcher->listen(SomethingHappened::class, function () use (&$log) { $log[] = 'a'; });
-        $this->dispatcher->listen(SomethingHappened::class, function () use (&$log) { $log[] = 'b'; });
+        $this->dispatcher->listen(SomethingHappened::class, function () use (&$log) {
+            $log[] = 'a'; });
+        $this->dispatcher->listen(SomethingHappened::class, function () use (&$log) {
+            $log[] = 'b'; });
         $this->dispatcher->dispatch(new SomethingHappened('x'));
         $this->assertSame(['a', 'b'], $log);
     }

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Core\Middleware;
+namespace Ironflow\Middleware;
 
-use Core\Container;
-use Core\Http\Request;
+use Ironflow\Container;
+use Ironflow\Http\Request;
 use Closure;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -19,9 +19,11 @@ use Symfony\Component\HttpFoundation\Response;
 class Pipeline
 {
     private Request $passable;
-    private array   $pipes = [];
+    private array $pipes = [];
 
-    public function __construct(private readonly Container $container) {}
+    public function __construct(private readonly Container $container)
+    {
+    }
 
     public function send(Request $request): static
     {

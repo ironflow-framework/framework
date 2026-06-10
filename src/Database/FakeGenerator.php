@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Core\Database;
+namespace Ironflow\Database;
 
 /**
  * Minimal fake data generator. No external dependencies.
@@ -10,9 +10,9 @@ namespace Core\Database;
 class FakeGenerator
 {
     private static array $firstNames = ['Alice', 'Bob', 'Charlie', 'Diana', 'Ethan', 'Fiona', 'George', 'Hannah', 'Ivan', 'Julia'];
-    private static array $lastNames  = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Wilson', 'Moore'];
-    private static array $words      = ['lorem', 'ipsum', 'dolor', 'sit', 'amet', 'consectetur', 'adipiscing', 'elit', 'sed', 'do', 'eiusmod', 'tempor', 'incididunt', 'ut', 'labore'];
-    private static array $domains    = ['example.com', 'test.org', 'demo.net', 'sample.io', 'fake.dev'];
+    private static array $lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Wilson', 'Moore'];
+    private static array $words = ['lorem', 'ipsum', 'dolor', 'sit', 'amet', 'consectetur', 'adipiscing', 'elit', 'sed', 'do', 'eiusmod', 'tempor', 'incididunt', 'ut', 'labore'];
+    private static array $domains = ['example.com', 'test.org', 'demo.net', 'sample.io', 'fake.dev'];
 
     public function name(): string
     {
@@ -31,14 +31,14 @@ class FakeGenerator
 
     public function email(): string
     {
-        $name   = strtolower($this->firstName()) . mt_rand(1, 999);
+        $name = strtolower($this->firstName()) . mt_rand(1, 999);
         $domain = self::$domains[array_rand(self::$domains)];
         return "{$name}@{$domain}";
     }
 
     public function password(string $plain = 'password'): string
     {
-        return \Core\Auth\Hash::make($plain);
+        return \Ironflow\Auth\Hash::make($plain);
     }
 
     public function sentence(int $wordCount = 8): string
@@ -86,7 +86,7 @@ class FakeGenerator
     public function dateTimeBetween(string $start = '-1 year', string $end = 'now'): string
     {
         $startTs = strtotime($start);
-        $endTs   = strtotime($end);
+        $endTs = strtotime($end);
         return date('Y-m-d H:i:s', mt_rand($startTs, $endTs));
     }
 

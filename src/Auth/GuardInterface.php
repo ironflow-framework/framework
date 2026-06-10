@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Core\Auth;
+namespace Ironflow\Auth;
 
 interface GuardInterface
 {

@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Core\Console\Commands;
+namespace Ironflow\Console\Commands;
 
-use Core\Console\Command;
-use Core\Database\Connection;
-use Core\Database\Migrations\Migrator;
+use Ironflow\Console\Command;
+use Ironflow\Database\Connection;
+use Ironflow\Database\Migrations\Migrator;
 
 class MigrateStatusCommand extends Command
 {
-    protected string $signature   = 'migrate:status';
+    protected string $signature = 'migrate:status';
     protected string $description = 'Show the status of each migration';
 
     public function __construct(private readonly Connection $db)
@@ -21,8 +21,8 @@ class MigrateStatusCommand extends Command
     protected function handle(): int
     {
         $migrator = new Migrator($this->db);
-        $path     = base_path('modules');
-        $paths    = glob($path . '/*/Database/Migrations') ?: [$path];
+        $path = base_path('modules');
+        $paths = glob($path . '/*/Database/Migrations') ?: [$path];
 
         $all = [];
         foreach ($paths as $p) {

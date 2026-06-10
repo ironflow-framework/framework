@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Core\Facades;
+namespace Ironflow\Facades;
 
-use Core\Support\Facade;
+use Ironflow\Support\Facade;
 
 /**
  * @method static void dispatch(object $event)
@@ -15,6 +15,6 @@ class Event extends Facade
 {
     protected static function getFacadeAccessor(): string
     {
-        return \Core\Events\Dispatcher::class;
+        return \Ironflow\Events\Dispatcher::class;
     }
 }

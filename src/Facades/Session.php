@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Core\Facades;
+namespace Ironflow\Facades;
 
-use Core\Support\Facade;
+use Ironflow\Support\Facade;
 
 /**
  * @method static mixed get(string $key, mixed $default = null)
@@ -19,6 +19,6 @@ class Session extends Facade
 {
     protected static function getFacadeAccessor(): string
     {
-        return \Core\Session\SessionManager::class;
+        return \Ironflow\Session\SessionManager::class;
     }
 }

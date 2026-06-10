@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Core\Console\Commands;
+namespace Ironflow\Console\Commands;
 
-use Core\Console\Command;
-use Core\Database\Connection;
-use Core\Database\Migrations\Migrator;
+use Ironflow\Console\Command;
+use Ironflow\Database\Connection;
+use Ironflow\Database\Migrations\Migrator;
 
 class MigrateFreshCommand extends Command
 {
-    protected string $signature   = 'migrate:fresh {--seed}';
+    protected string $signature = 'migrate:fresh {--seed}';
     protected string $description = 'Drop all tables and re-run all migrations';
 
     public function __construct(private readonly Connection $db)
@@ -25,7 +25,7 @@ class MigrateFreshCommand extends Command
         }
 
         $migrator = new Migrator($this->db);
-        $path     = base_path('modules');
+        $path = base_path('modules');
 
         // Collect paths
         $paths = glob($path . '/*/Database/Migrations') ?: [];

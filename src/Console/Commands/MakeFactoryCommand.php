@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Core\Console\Commands;
+namespace Ironflow\Console\Commands;
 
-use Core\Console\Command;
+use Ironflow\Console\Command;
 
 class MakeFactoryCommand extends Command
 {
-    protected string $signature   = 'make:factory {name} {--module=}';
+    protected string $signature = 'make:factory {name} {--module=}';
     protected string $description = 'Create a new model factory class';
 
     protected function handle(): int
     {
-        $name   = (string) $this->argument('name');
+        $name = (string) $this->argument('name');
         $module = $this->option('module');
 
         $path = $module
@@ -30,7 +30,7 @@ declare(strict_types=1);
 
 namespace {$ns};
 
-use Core\\Database\\Factory;
+use Ironflow\\Database\\Factory;
 
 class {$name} extends Factory
 {

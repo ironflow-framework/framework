@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Core\Http;
+namespace Ironflow\Http;
 
-use Core\Application;
-use Core\Routing\Router;
+use Ironflow\Application;
+use Ironflow\Routing\Router;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 /**
@@ -16,7 +16,7 @@ class Response extends SymfonyResponse
     /** Render a Twig template and return a Response. */
     public static function view(string $template, array $data = [], int $status = 200): self
     {
-        $engine = Application::getInstance()->getContainer()->make(\Core\Template\Engine::class);
+        $engine = Application::getInstance()->getContainer()->make(\Ironflow\Template\Engine::class);
         $html = $engine->render($template, $data);
         return new self($html, $status, ['Content-Type' => 'text/html; charset=UTF-8']);
     }
@@ -35,7 +35,7 @@ class Response extends SymfonyResponse
 
     public static function render(string $template, array $data = [], int $status = 200, array $headers = []): SymfonyResponse
     {
-        $engine = Application::getInstance()->getContainer()->make(\Core\Template\Engine::class);
+        $engine = Application::getInstance()->getContainer()->make(\Ironflow\Template\Engine::class);
         $html = $engine->render($template, $data);
         return new self($html, $status, array_merge(['Content-Type' => 'text/html; charset=UTF-8'], $headers));
     }

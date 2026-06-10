@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Core\Exceptions;
+namespace Ironflow\Exceptions;
 
 use RuntimeException;
 
-class ModuleException extends RuntimeException {}
+class ModuleException extends RuntimeException
+{
+}

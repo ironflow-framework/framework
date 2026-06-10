@@ -2,23 +2,23 @@
 
 declare(strict_types=1);
 
-namespace Core\Console\Commands;
+namespace Ironflow\Console\Commands;
 
-use Core\Console\Command;
+use Ironflow\Console\Command;
 
 class MakeFormRequestCommand extends Command
 {
-    protected string $signature   = 'make:form-request {name : Class name (e.g. StorePostRequest)} {--module= : Target module}';
+    protected string $signature = 'make:form-request {name : Class name (e.g. StorePostRequest)} {--module= : Target module}';
     protected string $description = 'Create a new FormRequest class';
 
     public function handle(): int
     {
-        $name   = (string) $this->argument('name');
+        $name = (string) $this->argument('name');
         $module = $this->option('module');
 
         [$namespace, $dir] = $this->resolveTarget($name, (string) $module);
-        $class             = class_basename($name);
-        $file              = $dir . '/' . $class . '.php';
+        $class = class_basename($name);
+        $file = $dir . '/' . $class . '.php';
 
         if (is_file($file)) {
             $this->error("File already exists: {$file}");
@@ -39,10 +39,10 @@ class MakeFormRequestCommand extends Command
         $base = base_path('modules');
 
         if ($module) {
-            $ns  = "Modules\\{$module}\\Http\\Requests";
+            $ns = "Modules\\{$module}\\Http\\Requests";
             $dir = "{$base}/{$module}/Http/Requests";
         } else {
-            $ns  = 'App\\Http\\Requests';
+            $ns = 'App\\Http\\Requests';
             $dir = base_path('app/Http/Requests');
         }
 
@@ -50,8 +50,8 @@ class MakeFormRequestCommand extends Command
         array_pop($parts); // remove class name
 
         if ($parts) {
-            $sub  = implode('/', $parts);
-            $ns  .= '\\' . str_replace('/', '\\', $sub);
+            $sub = implode('/', $parts);
+            $ns .= '\\' . str_replace('/', '\\', $sub);
             $dir .= '/' . $sub;
         }
 
@@ -67,7 +67,7 @@ declare(strict_types=1);
 
 namespace {$namespace};
 
-use Core\Http\FormRequest;
+use Ironflow\Http\FormRequest;
 
 class {$class} extends FormRequest
 {

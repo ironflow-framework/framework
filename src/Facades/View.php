@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Core\Facades;
+namespace Ironflow\Facades;
 
-use Core\Support\Facade;
+use Ironflow\Support\Facade;
 
 /**
  * @method static string render(string $template, array $data = [])
@@ -15,6 +15,6 @@ class View extends Facade
 {
     protected static function getFacadeAccessor(): string
     {
-        return \Core\Template\Engine::class;
+        return \Ironflow\Template\Engine::class;
     }
 }

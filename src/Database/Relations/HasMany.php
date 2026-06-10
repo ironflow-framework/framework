@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Core\Database\Relations;
+namespace Ironflow\Database\Relations;
 
-use Core\Database\Connection;
-use Core\Database\Model;
-use Core\Database\ModelQueryBuilder;
-use Core\Support\Collection;
+use Ironflow\Database\Connection;
+use Ironflow\Database\Model;
+use Ironflow\Database\ModelQueryBuilder;
+use Ironflow\Support\Collection;
 
 /**
  * One-to-many relation: a Post hasMany Comments.
@@ -28,13 +28,13 @@ class HasMany extends Relation
 
     public function eagerLoad(Collection $models, ?callable $constraint): Collection
     {
-        $keys  = $this->getParentKeys($models);
+        $keys = $this->getParentKeys($models);
         if (empty($keys)) {
             return new Collection();
         }
 
         $class = get_class($this->related);
-        $qb    = (new ModelQueryBuilder($this->connection, $this->related->getTableName(), $class))
+        $qb = (new ModelQueryBuilder($this->connection, $this->related->getTableName(), $class))
             ->whereIn($this->foreignKey, $keys);
 
         if ($constraint !== null) {

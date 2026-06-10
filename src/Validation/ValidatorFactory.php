@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Core\Validation;
+namespace Ironflow\Validation;
 
-use Core\Application;
-use Core\Database\Connection;
+use Ironflow\Application;
+use Ironflow\Database\Connection;
 
 /**
  * Factory to create ValidatorInstance objects.
@@ -18,7 +18,8 @@ class ValidatorFactory
         $db = null;
         try {
             $db = Application::getInstance()->getContainer()->make(Connection::class);
-        } catch (\Throwable) {}
+        } catch (\Throwable) {
+        }
 
         return new ValidatorInstance($data, $rules, $messages, $db);
     }

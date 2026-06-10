@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Core\Tests\Unit;
+namespace Ironflow\Tests\Unit;
 
-use Core\Validation\ValidatorInstance;
+use Ironflow\Validation\ValidatorInstance;
 use PHPUnit\Framework\TestCase;
 
 class ValidatorTest extends TestCase
@@ -17,7 +17,7 @@ class ValidatorTest extends TestCase
     public function test_passes_with_valid_data(): void
     {
         $v = $this->make(['name' => 'Alice', 'email' => 'alice@example.com'], [
-            'name'  => 'required|string',
+            'name' => 'required|string',
             'email' => 'required|email',
         ]);
         $this->assertTrue($v->passes());

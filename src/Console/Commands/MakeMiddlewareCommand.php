@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Core\Console\Commands;
+namespace Ironflow\Console\Commands;
 
-use Core\Console\Command;
+use Ironflow\Console\Command;
 
 class MakeMiddlewareCommand extends Command
 {
-    protected string $signature   = 'make:middleware {name}';
+    protected string $signature = 'make:middleware {name}';
     protected string $description = 'Create a new middleware class';
 
     protected function handle(): int
@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace App\\Middleware;
 
-use Core\\Http\\Request;
+use Ironflow\\Http\\Request;
 use Symfony\\Component\\HttpFoundation\\Response;
 
 class {$name}

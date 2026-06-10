@@ -2,30 +2,40 @@
 
 declare(strict_types=1);
 
-namespace Core\Tests\Unit;
+namespace Ironflow\Tests\Unit;
 
-use Core\Container;
-use Core\Module\Attributes\Module;
-use Core\Module\BaseModule;
-use Core\Module\ModuleManager;
-use Core\Module\ModuleException;
+use Ironflow\Container;
+use Ironflow\Module\Attributes\Module;
+use Ironflow\Module\BaseModule;
+use Ironflow\Module\ModuleManager;
+use Ironflow\Module\ModuleException;
 use PHPUnit\Framework\TestCase;
 
 #[Module(name: 'alpha', imports: [], providers: [], exports: [])]
-class AlphaModule extends BaseModule {}
+class AlphaModule extends BaseModule
+{
+}
 
 #[Module(name: 'beta', imports: ['alpha'], providers: [], exports: [])]
-class BetaModule extends BaseModule {}
+class BetaModule extends BaseModule
+{
+}
 
 #[Module(name: 'gamma', imports: ['beta'], providers: [], exports: [])]
-class GammaModule extends BaseModule {}
+class GammaModule extends BaseModule
+{
+}
 
 // Cycle modules: delta imports epsilon, epsilon imports delta
 #[Module(name: 'delta', imports: ['epsilon'], providers: [], exports: [])]
-class DeltaModule extends BaseModule {}
+class DeltaModule extends BaseModule
+{
+}
 
 #[Module(name: 'epsilon', imports: ['delta'], providers: [], exports: [])]
-class EpsilonModule extends BaseModule {}
+class EpsilonModule extends BaseModule
+{
+}
 
 class ModuleManagerTest extends TestCase
 {

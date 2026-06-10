@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Core\Database\Concerns;
+namespace Ironflow\Database\Concerns;
 
-use Core\Database\ModelQueryBuilder;
-use Core\Support\Collection;
+use Ironflow\Database\ModelQueryBuilder;
+use Ironflow\Support\Collection;
 
 /**
  * Soft-delete trait. Add to a Model to enable deleted_at column.

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Core\Template;
+namespace Ironflow\Template;
 
 use ReflectionClass;
 use ReflectionProperty;
@@ -53,7 +53,7 @@ abstract class Component
     public function data(): array
     {
         $reflection = new ReflectionClass($this);
-        $data       = [];
+        $data = [];
         foreach ($reflection->getProperties(ReflectionProperty::IS_PUBLIC) as $prop) {
             if (!$prop->isStatic() && $prop->isInitialized($this)) {
                 $data[$prop->getName()] = $prop->getValue($this);

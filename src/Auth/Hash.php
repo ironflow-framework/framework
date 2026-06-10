@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Core\Auth;
+namespace Ironflow\Auth;
 
 /**
  * Password hashing using Argon2id.
@@ -13,8 +13,8 @@ class Hash
     {
         $hash = password_hash($password, PASSWORD_ARGON2ID, [
             'memory_cost' => 65536,
-            'time_cost'   => 4,
-            'threads'     => 1,
+            'time_cost' => 4,
+            'threads' => 1,
         ]);
 
         if ($hash === false) {

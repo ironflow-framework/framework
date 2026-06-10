@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Core\Database\Schema;
+namespace Ironflow\Database\Schema;
 
 /**
  * Fluent column definition for Blueprint.

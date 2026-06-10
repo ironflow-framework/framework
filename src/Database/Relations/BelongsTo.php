@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Core\Database\Relations;
+namespace Ironflow\Database\Relations;
 
-use Core\Database\ModelQueryBuilder;
-use Core\Database\Model;
-use Core\Support\Collection;
+use Ironflow\Database\ModelQueryBuilder;
+use Ironflow\Database\Model;
+use Ironflow\Support\Collection;
 
 /**
  * Inverse of HasOne/HasMany: a Comment belongsTo Post.
@@ -14,7 +14,7 @@ use Core\Support\Collection;
 class BelongsTo extends Relation
 {
     public function __construct(
-        \Core\Database\Connection $connection,
+        \Ironflow\Database\Connection $connection,
         Model $related,
         string $foreignKey,   // e.g. post_id (on the child model)
         string $ownerKey,     // e.g. id (on the parent model)
@@ -44,7 +44,7 @@ class BelongsTo extends Relation
         }
 
         $class = get_class($this->related);
-        $qb    = (new ModelQueryBuilder($this->connection, $this->related->getTableName(), $class))
+        $qb = (new ModelQueryBuilder($this->connection, $this->related->getTableName(), $class))
             ->whereIn($this->localKey, $keys);
 
         if ($constraint !== null) {

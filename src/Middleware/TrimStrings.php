@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Core\Middleware;
+namespace Ironflow\Middleware;
 
-use Core\Http\Request;
+use Ironflow\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class TrimStrings

@@ -2,27 +2,27 @@
 
 declare(strict_types=1);
 
-namespace Core\Console\Commands;
+namespace Ironflow\Console\Commands;
 
-use Core\Console\Command;
+use Ironflow\Console\Command;
 
 class MakeControllerCommand extends Command
 {
-    protected string $signature   = 'make:controller {name} {--module=} {--resource}';
+    protected string $signature = 'make:controller {name} {--module=} {--resource}';
     protected string $description = 'Create a new controller class';
 
     protected function handle(): int
     {
-        $name     = (string) $this->argument('name');
-        $module   = $this->option('module');
+        $name = (string) $this->argument('name');
+        $module = $this->option('module');
         $resource = (bool) $this->option('resource');
 
         if ($module) {
             $path = base_path("modules/{$module}/Controllers/{$name}.php");
-            $ns   = "Modules\\{$module}\\Controllers";
+            $ns = "Modules\\{$module}\\Controllers";
         } else {
             $path = base_path("app/Controllers/{$name}.php");
-            $ns   = "App\\Controllers";
+            $ns = "App\\Controllers";
             @mkdir(base_path('app/Controllers'), 0755, true);
         }
 
@@ -48,8 +48,8 @@ declare(strict_types=1);
 
 namespace {$ns};
 
-use Core\\Http\\Request;
-use Core\\Http\\Response;
+use Ironflow\\Http\\Request;
+use Ironflow\\Http\\Response;
 
 class {$name}
 {

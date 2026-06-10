@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Core\Console\Commands;
+namespace Ironflow\Console\Commands;
 
-use Core\Console\Command;
+use Ironflow\Console\Command;
 
 class KeyGenerateCommand extends Command
 {
-    protected string $signature   = 'key:generate {--show}';
+    protected string $signature = 'key:generate {--show}';
     protected string $description = 'Generate a new application key and write it to .env';
 
     protected function handle(): int
     {
-        $key  = 'base64:' . base64_encode(random_bytes(32));
-        $env  = base_path('.env');
+        $key = 'base64:' . base64_encode(random_bytes(32));
+        $env = base_path('.env');
 
         if ($this->option('show')) {
             $this->line("<comment>{$key}</comment>");

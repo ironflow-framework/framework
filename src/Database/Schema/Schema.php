@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Core\Database\Schema;
+namespace Ironflow\Database\Schema;
 
-use Core\Application;
-use Core\Database\Connection;
+use Ironflow\Application;
+use Ironflow\Database\Connection;
 use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Schema\Column;
 
@@ -55,9 +55,9 @@ class Schema
 
     private static function buildTable(Blueprint $blueprint, bool $alter): void
     {
-        $conn     = self::connection();
+        $conn = self::connection();
         $platform = $conn->getPlatform();
-        $sm       = $conn->getSchemaManager();
+        $sm = $conn->getSchemaManager();
 
         if ($alter && $sm->tablesExist([$blueprint->getTableName()])) {
             // Build ALTER statements
@@ -79,12 +79,12 @@ class Schema
         foreach ($blueprint->getColumns() as $col) {
             if (is_array($col)) {
                 // id() shorthand
-                $opts     = $col['options'];
-                $autoInc  = $opts['autoincrement'] ?? false;
+                $opts = $col['options'];
+                $autoInc = $opts['autoincrement'] ?? false;
                 $nullable = !($opts['notnull'] ?? true);
 
-                $typeSql  = self::mapTypeSql($col['type'], $opts, $platform);
-                $colSql   = "`{$col['name']}` {$typeSql}";
+                $typeSql = self::mapTypeSql($col['type'], $opts, $platform);
+                $colSql = "`{$col['name']}` {$typeSql}";
                 if ($autoInc) {
                     $colSql .= ' NOT NULL AUTO_INCREMENT';
                 } elseif ($nullable) {
@@ -100,9 +100,9 @@ class Schema
                     $primaryKey = $col['name'];
                 }
             } elseif ($col instanceof ColumnDefinition) {
-                $opts    = $col->getOptions();
+                $opts = $col->getOptions();
                 $typeSql = self::mapTypeSql($col->type, $opts, $platform);
-                $colSql  = "`{$col->name}` {$typeSql}";
+                $colSql = "`{$col->name}` {$typeSql}";
                 $nullable = !($opts['notnull'] ?? true);
                 if ($nullable) {
                     $colSql .= ' NULL';
@@ -144,7 +144,7 @@ class Schema
         $driver = strtolower(class_basename(get_class($platform)));
         $isSqlite = str_contains($driver, 'sqlite');
 
-        $engine  = $isSqlite ? '' : ' ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci';
+        $engine = $isSqlite ? '' : ' ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci';
         $backtick = $isSqlite ? '"' : '`';
 
         // For SQLite, simplify
@@ -170,24 +170,27 @@ class Schema
         $isSqlite = str_contains($driver, 'sqlite');
 
         return match ($type) {
-            'bigint'           => $isSqlite ? 'INTEGER' : 'BIGINT UNSIGNED',
-            'integer'          => $isSqlite ? 'INTEGER' : 'INT',
-            'string'           => 'VARCHAR(' . ($opts['length'] ?? 255) . ')',
-            'text'             => 'TEXT',
-            'boolean'          => $isSqlite ? 'INTEGER' : 'TINYINT(1)',
+            'bigint' => $isSqlite ? 'INTEGER' : 'BIGINT UNSIGNED',
+            'integer' => $isSqlite ? 'INTEGER' : 'INT',
+            'string' => 'VARCHAR(' . ($opts['length'] ?? 255) . ')',
+            'text' => 'TEXT',
+            'boolean' => $isSqlite ? 'INTEGER' : 'TINYINT(1)',
             'float', 'decimal' => 'DECIMAL(' . ($opts['precision'] ?? 8) . ',' . ($opts['scale'] ?? 2) . ')',
-            'json'             => $isSqlite ? 'TEXT' : 'JSON',
+            'json' => $isSqlite ? 'TEXT' : 'JSON',
             'datetime_mutable', 'datetime' => 'DATETIME',
-            'date_mutable', 'date'         => 'DATE',
-            default            => strtoupper($type),
+            'date_mutable', 'date' => 'DATE',
+            default => strtoupper($type),
         };
     }
 
     private static function quoteDefault(mixed $value): string
     {
-        if ($value === null) return 'NULL';
-        if (is_bool($value)) return $value ? '1' : '0';
-        if (is_int($value) || is_float($value)) return (string) $value;
+        if ($value === null)
+            return 'NULL';
+        if (is_bool($value))
+            return $value ? '1' : '0';
+        if (is_int($value) || is_float($value))
+            return (string) $value;
         return "'" . addslashes((string) $value) . "'";
     }
 

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Core\Events;
+namespace Ironflow\Events;
 
-use Core\Container;
+use Ironflow\Container;
 
 /**
  * Event Dispatcher — decoupled pub/sub between modules.
@@ -19,7 +19,9 @@ class Dispatcher
     /** @var array<string, array<callable|string>> */
     private array $listeners = [];
 
-    public function __construct(private readonly Container $container) {}
+    public function __construct(private readonly Container $container)
+    {
+    }
 
     public function listen(string $eventClass, callable|string $listener): void
     {

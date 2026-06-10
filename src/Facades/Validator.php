@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Core\Facades;
+namespace Ironflow\Facades;
 
-use Core\Support\Facade;
+use Ironflow\Support\Facade;
 
 /**
- * @method static \Core\Validation\ValidatorInstance make(array $data, array $rules, array $messages = [])
+ * @method static \Ironflow\Validation\ValidatorInstance make(array $data, array $rules, array $messages = [])
  */
 class Validator extends Facade
 {
     protected static function getFacadeAccessor(): string
     {
-        return \Core\Validation\ValidatorFactory::class;
+        return \Ironflow\Validation\ValidatorFactory::class;
     }
 }

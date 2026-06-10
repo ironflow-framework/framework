@@ -2,24 +2,24 @@
 
 declare(strict_types=1);
 
-namespace Core\Console\Commands;
+namespace Ironflow\Console\Commands;
 
-use Core\Console\Command;
+use Ironflow\Console\Command;
 
 class MakeResourceCommand extends Command
 {
-    protected string $signature   = 'make:resource {name : Class name (e.g. PostResource)} {--collection : Generate a ResourceCollection instead} {--module= : Target module}';
+    protected string $signature = 'make:resource {name : Class name (e.g. PostResource)} {--collection : Generate a ResourceCollection instead} {--module= : Target module}';
     protected string $description = 'Create a new API Resource class';
 
     public function handle(): int
     {
-        $name       = (string) $this->argument('name');
-        $collection = (bool)   $this->option('collection');
-        $module     = (string) $this->option('module');
+        $name = (string) $this->argument('name');
+        $collection = (bool) $this->option('collection');
+        $module = (string) $this->option('module');
 
         [$namespace, $dir] = $this->resolveTarget($name, $module);
-        $class             = class_basename($name);
-        $file              = $dir . '/' . $class . '.php';
+        $class = class_basename($name);
+        $file = $dir . '/' . $class . '.php';
 
         if (is_file($file)) {
             $this->error("File already exists: {$file}");
@@ -44,10 +44,10 @@ class MakeResourceCommand extends Command
         $base = base_path('modules');
 
         if ($module) {
-            $ns  = "Modules\\{$module}\\Http\\Resources";
+            $ns = "Modules\\{$module}\\Http\\Resources";
             $dir = "{$base}/{$module}/Http/Resources";
         } else {
-            $ns  = 'App\\Http\\Resources';
+            $ns = 'App\\Http\\Resources';
             $dir = base_path('app/Http/Resources');
         }
 
@@ -55,8 +55,8 @@ class MakeResourceCommand extends Command
         array_pop($parts);
 
         if ($parts) {
-            $sub  = implode('/', $parts);
-            $ns  .= '\\' . str_replace('/', '\\', $sub);
+            $sub = implode('/', $parts);
+            $ns .= '\\' . str_replace('/', '\\', $sub);
             $dir .= '/' . $sub;
         }
 
@@ -72,8 +72,8 @@ declare(strict_types=1);
 
 namespace {$namespace};
 
-use Core\Http\Request;
-use Core\Http\Resources\JsonResource;
+use Ironflow\Http\Request;
+use Ironflow\Http\Resources\JsonResource;
 
 class {$class} extends JsonResource
 {
@@ -97,8 +97,8 @@ declare(strict_types=1);
 
 namespace {$namespace};
 
-use Core\Http\Request;
-use Core\Http\Resources\JsonResource;
+use Ironflow\Http\Request;
+use Ironflow\Http\Resources\JsonResource;
 
 class {$class} extends JsonResource
 {

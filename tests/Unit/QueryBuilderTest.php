@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Core\Tests\Unit;
+namespace Ironflow\Tests\Unit;
 
-use Core\Database\Connection;
+use Ironflow\Database\Connection;
 use PHPUnit\Framework\TestCase;
 
 class QueryBuilderTest extends TestCase

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Core\Session;
+namespace Ironflow\Session;
 
-use Core\Http\Request;
+use Ironflow\Http\Request;
 use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Session\Session;
@@ -21,7 +21,7 @@ class SessionManager
 
     public function __construct()
     {
-        $storage       = new NativeSessionStorage(['cookie_httponly' => true, 'cookie_samesite' => 'lax']);
+        $storage = new NativeSessionStorage(['cookie_httponly' => true, 'cookie_samesite' => 'lax']);
         $this->session = new Session($storage);
     }
 

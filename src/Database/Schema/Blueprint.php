@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Core\Database\Schema;
+namespace Ironflow\Database\Schema;
 
 use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Types\Types;
@@ -17,7 +17,9 @@ class Blueprint
     private array $indices = [];
     private array $foreigns = [];
 
-    public function __construct(private readonly string $tableName) {}
+    public function __construct(private readonly string $tableName)
+    {
+    }
 
     // ─────────────────────── Columns ─────────────────────────────────
 
@@ -160,18 +162,30 @@ class Blueprint
     public function addForeign(string $column, string $referencedTable, string $referencedColumn = 'id', ?string $onDelete = null): static
     {
         $this->foreigns[] = [
-            'column'     => $column,
-            'table'      => $referencedTable,
+            'column' => $column,
+            'table' => $referencedTable,
             'ref_column' => $referencedColumn,
-            'on_delete'  => $onDelete,
+            'on_delete' => $onDelete,
         ];
         return $this;
     }
 
     // ─────────────────────── Build ────────────────────────────────────
 
-    public function getColumns(): array { return $this->columns; }
-    public function getIndices(): array { return $this->indices; }
-    public function getForeigns(): array { return $this->foreigns; }
-    public function getTableName(): string { return $this->tableName; }
+    public function getColumns(): array
+    {
+        return $this->columns;
+    }
+    public function getIndices(): array
+    {
+        return $this->indices;
+    }
+    public function getForeigns(): array
+    {
+        return $this->foreigns;
+    }
+    public function getTableName(): string
+    {
+        return $this->tableName;
+    }
 }

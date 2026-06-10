@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Core\Facades;
+namespace Ironflow\Facades;
 
-use Core\Support\Facade;
+use Ironflow\Support\Facade;
 
 /**
  * @method static bool check()
@@ -18,6 +18,6 @@ class Auth extends Facade
 {
     protected static function getFacadeAccessor(): string
     {
-        return \Core\Auth\AuthManager::class;
+        return \Ironflow\Auth\AuthManager::class;
     }
 }

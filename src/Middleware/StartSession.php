@@ -2,16 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Core\Middleware;
+namespace Ironflow\Middleware;
 
-use Core\Http\Request;
-use Core\Http\RedirectResponse;
-use Core\Session\SessionManager;
+use Ironflow\Http\Request;
+use Ironflow\Http\RedirectResponse;
+use Ironflow\Session\SessionManager;
 use Symfony\Component\HttpFoundation\Response;
 
 class StartSession
 {
-    public function __construct(private readonly SessionManager $session) {}
+    public function __construct(private readonly SessionManager $session)
+    {
+    }
 
     public function handle(Request $request, callable $next): Response
     {

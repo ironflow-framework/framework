@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Core\Support;
+namespace Ironflow\Support;
 
 use ArrayAccess;
 use Countable;
@@ -162,7 +162,7 @@ class Collection implements ArrayAccess, Countable, IteratorAggregate, JsonSeria
         return new static(array_keys($this->items));
     }
 
-    public function merge(array|static $items): static
+    public function merge(array|self $items): static
     {
         $items = $items instanceof static ? $items->toArray() : $items;
         return new static(array_merge($this->items, $items));
@@ -189,13 +189,13 @@ class Collection implements ArrayAccess, Countable, IteratorAggregate, JsonSeria
         return $count > 0 ? $this->sum($key) / $count : 0.0;
     }
 
-    public function min(string $key = null): mixed
+    public function min(?string $key = null): mixed
     {
         $items = $key ? $this->pluck($key)->toArray() : $this->items;
         return empty($items) ? null : min($items);
     }
 
-    public function max(string $key = null): mixed
+    public function max(?string $key = null): mixed
     {
         $items = $key ? $this->pluck($key)->toArray() : $this->items;
         return empty($items) ? null : max($items);

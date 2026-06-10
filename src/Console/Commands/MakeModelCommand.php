@@ -2,26 +2,26 @@
 
 declare(strict_types=1);
 
-namespace Core\Console\Commands;
+namespace Ironflow\Console\Commands;
 
-use Core\Console\Command;
+use Ironflow\Console\Command;
 
 class MakeModelCommand extends Command
 {
-    protected string $signature   = 'make:model {name} {--module=} {--migration} {--factory}';
+    protected string $signature = 'make:model {name} {--module=} {--migration} {--factory}';
     protected string $description = 'Create a new model class';
 
     protected function handle(): int
     {
-        $name    = (string) $this->argument('name');
-        $module  = $this->option('module');
+        $name = (string) $this->argument('name');
+        $module = $this->option('module');
 
         if ($module) {
             $path = base_path("modules/{$module}/Models/{$name}.php");
-            $ns   = "Modules\\{$module}\\Models";
+            $ns = "Modules\\{$module}\\Models";
         } else {
             $path = base_path("app/Models/{$name}.php");
-            $ns   = "App\\Models";
+            $ns = "App\\Models";
             @mkdir(base_path('app/Models'), 0755, true);
         }
 
@@ -58,7 +58,7 @@ declare(strict_types=1);
 
 namespace {$ns};
 
-use Core\\Database\\Model;
+use Ironflow\\Database\\Model;
 
 class {$name} extends Model
 {
@@ -76,9 +76,9 @@ PHP;
 
 declare(strict_types=1);
 
-use Core\\Database\\Migrations\\Migration;
-use Core\\Database\\Schema\\Schema;
-use Core\\Database\\Schema\\Blueprint;
+use Ironflow\\Database\\Migrations\\Migration;
+use Ironflow\\Database\\Schema\\Schema;
+use Ironflow\\Database\\Schema\\Blueprint;
 
 class {$class} extends Migration
 {

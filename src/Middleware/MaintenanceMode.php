@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Core\Middleware;
+namespace Ironflow\Middleware;
 
-use Core\Application;
-use Core\Exceptions\HttpException;
-use Core\Http\Request;
+use Ironflow\Application;
+use Ironflow\Exceptions\HttpException;
+use Ironflow\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class MaintenanceMode

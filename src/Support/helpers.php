@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use Core\Application;
-use Core\Config\Repository as ConfigRepository;
-use Core\Exceptions\HttpException;
+use Ironflow\Application;
+use Ironflow\Config\Repository as ConfigRepository;
+use Ironflow\Exceptions\HttpException;
 
 if (!function_exists('app')) {
     function app(?string $abstract = null): mixed
@@ -32,11 +32,11 @@ if (!function_exists('env')) {
             return $default;
         }
         return match (strtolower((string) $value)) {
-            'true', '(true)'   => true,
+            'true', '(true)' => true,
             'false', '(false)' => false,
-            'null', '(null)'   => null,
+            'null', '(null)' => null,
             'empty', '(empty)' => '',
-            default            => $value,
+            default => $value,
         };
     }
 }
@@ -44,7 +44,7 @@ if (!function_exists('env')) {
 if (!function_exists('route')) {
     function route(string $name, array $params = []): string
     {
-        return app(\Core\Routing\Router::class)->route($name, $params);
+        return app(\Ironflow\Routing\Router::class)->route($name, $params);
     }
 }
 
@@ -74,16 +74,16 @@ if (!function_exists('abort_unless')) {
 }
 
 if (!function_exists('redirect')) {
-    function redirect(string $url, int $status = 302): \Core\Http\RedirectResponse
+    function redirect(string $url, int $status = 302): \Ironflow\Http\RedirectResponse
     {
-        return new \Core\Http\RedirectResponse($url, $status);
+        return new \Ironflow\Http\RedirectResponse($url, $status);
     }
 }
 
 if (!function_exists('view')) {
     function view(string $template, array $data = []): string
     {
-        return app(\Core\Template\Engine::class)->render($template, $data);
+        return app(\Ironflow\Template\Engine::class)->render($template, $data);
     }
 }
 
@@ -118,7 +118,7 @@ if (!function_exists('public_path')) {
 if (!function_exists('bcrypt')) {
     function bcrypt(string $password): string
     {
-        return \Core\Auth\Hash::make($password);
+        return \Ironflow\Auth\Hash::make($password);
     }
 }
 
@@ -142,15 +142,15 @@ if (!function_exists('str_slug')) {
 }
 
 if (!function_exists('collect')) {
-    function collect(array $items = []): \Core\Support\Collection
+    function collect(array $items = []): \Ironflow\Support\Collection
     {
-        return new \Core\Support\Collection($items);
+        return new \Ironflow\Support\Collection($items);
     }
 }
 
 if (!function_exists('csrf_token')) {
     function csrf_token(): string
     {
-        return app(\Core\Session\SessionManager::class)->csrfToken();
+        return app(\Ironflow\Session\SessionManager::class)->csrfToken();
     }
 }

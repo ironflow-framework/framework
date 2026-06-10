@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Core\Database;
+namespace Ironflow\Database;
 
-use Core\Support\Collection;
-use Core\Support\Paginator;
+use Ironflow\Support\Collection;
+use Ironflow\Support\Paginator;
 
 /**
  * Extends QueryBuilder to hydrate rows as Model instances,
@@ -112,9 +112,9 @@ class ModelQueryBuilder extends QueryBuilder
     {
         foreach ($this->eagerLoads as $relationPath => $constraint) {
             // Support dot notation: 'author.profile'
-            $parts    = explode('.', $relationPath, 2);
+            $parts = explode('.', $relationPath, 2);
             $relation = $parts[0];
-            $nested   = $parts[1] ?? null;
+            $nested = $parts[1] ?? null;
 
             $this->eagerLoadRelation($models, $relation, $constraint, $nested);
         }
@@ -133,7 +133,7 @@ class ModelQueryBuilder extends QueryBuilder
         }
 
         $relInstance = $first->$relation();
-        if (!($relInstance instanceof \Core\Database\Relations\Relation)) {
+        if (!($relInstance instanceof \Ironflow\Database\Relations\Relation)) {
             return;
         }
 
@@ -170,7 +170,7 @@ class ModelQueryBuilder extends QueryBuilder
                 continue;
             }
             $relInstance = $first->$relation();
-            if (!($relInstance instanceof \Core\Database\Relations\Relation)) {
+            if (!($relInstance instanceof \Ironflow\Database\Relations\Relation)) {
                 continue;
             }
 

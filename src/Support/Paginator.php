@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Core\Support;
+namespace Ironflow\Support;
 
 use JsonSerializable;
 
@@ -16,20 +16,41 @@ class Paginator implements JsonSerializable
 
     public function __construct(
         private readonly Collection $items,
-        private readonly int        $total,
-        private readonly int        $perPage,
-        private readonly int        $currentPage
+        private readonly int $total,
+        private readonly int $perPage,
+        private readonly int $currentPage
     ) {
         $this->lastPage = (int) ceil($total / max(1, $perPage));
     }
 
-    public function items(): Collection { return $this->items; }
-    public function total(): int        { return $this->total; }
-    public function perPage(): int      { return $this->perPage; }
-    public function currentPage(): int  { return $this->currentPage; }
-    public function lastPage(): int     { return $this->lastPage; }
-    public function hasMorePages(): bool { return $this->currentPage < $this->lastPage; }
-    public function onFirstPage(): bool  { return $this->currentPage <= 1; }
+    public function items(): Collection
+    {
+        return $this->items;
+    }
+    public function total(): int
+    {
+        return $this->total;
+    }
+    public function perPage(): int
+    {
+        return $this->perPage;
+    }
+    public function currentPage(): int
+    {
+        return $this->currentPage;
+    }
+    public function lastPage(): int
+    {
+        return $this->lastPage;
+    }
+    public function hasMorePages(): bool
+    {
+        return $this->currentPage < $this->lastPage;
+    }
+    public function onFirstPage(): bool
+    {
+        return $this->currentPage <= 1;
+    }
 
     public function links(string $pageParam = 'page'): string
     {
@@ -47,7 +68,7 @@ class Paginator implements JsonSerializable
 
         // Page numbers (show up to 7 pages around current)
         $start = max(1, $this->currentPage - 3);
-        $end   = min($this->lastPage, $this->currentPage + 3);
+        $end = min($this->lastPage, $this->currentPage + 3);
 
         if ($start > 1) {
             $html .= $this->pageLink(1, '1', $pageParam);
@@ -60,7 +81,7 @@ class Paginator implements JsonSerializable
             if ($i === $this->currentPage) {
                 $html .= "<span class=\"px-3 py-1 rounded bg-indigo-600 text-white font-medium\">{$i}</span>";
             } else {
-                $html .= $this->pageLink($i, (string)$i, $pageParam);
+                $html .= $this->pageLink($i, (string) $i, $pageParam);
             }
         }
 
@@ -68,7 +89,7 @@ class Paginator implements JsonSerializable
             if ($end < $this->lastPage - 1) {
                 $html .= '<span class="px-3 py-1 text-gray-500">…</span>';
             }
-            $html .= $this->pageLink($this->lastPage, (string)$this->lastPage, $pageParam);
+            $html .= $this->pageLink($this->lastPage, (string) $this->lastPage, $pageParam);
         }
 
         // Next
@@ -97,11 +118,11 @@ class Paginator implements JsonSerializable
     public function jsonSerialize(): mixed
     {
         return [
-            'data'         => $this->items->toArray(),
-            'total'        => $this->total,
-            'per_page'     => $this->perPage,
+            'data' => $this->items->toArray(),
+            'total' => $this->total,
+            'per_page' => $this->perPage,
             'current_page' => $this->currentPage,
-            'last_page'    => $this->lastPage,
+            'last_page' => $this->lastPage,
         ];
     }
 }

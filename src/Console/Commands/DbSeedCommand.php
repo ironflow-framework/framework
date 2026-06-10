@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Core\Console\Commands;
+namespace Ironflow\Console\Commands;
 
-use Core\Console\Command;
-use Core\Container;
+use Ironflow\Console\Command;
+use Ironflow\Container;
 
 class DbSeedCommand extends Command
 {
-    protected string $signature   = 'db:seed {--class=DatabaseSeeder}';
+    protected string $signature = 'db:seed {--class=DatabaseSeeder}';
     protected string $description = 'Run database seeders';
 
     public function __construct(private readonly Container $container)

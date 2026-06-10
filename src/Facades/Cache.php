@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Core\Facades;
+namespace Ironflow\Facades;
 
-use Core\Support\Facade;
+use Ironflow\Support\Facade;
 
 /**
  * @method static mixed get(string $key, mixed $default = null)
@@ -17,6 +17,6 @@ class Cache extends Facade
 {
     protected static function getFacadeAccessor(): string
     {
-        return \Core\Cache\CacheManager::class;
+        return \Ironflow\Cache\CacheManager::class;
     }
 }

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Core\Validation;
+namespace Ironflow\Validation;
 
-use Core\Database\Connection;
+use Ironflow\Database\Connection;
 
 /**
  * Validates an array of data against a set of rules.
@@ -13,16 +13,17 @@ use Core\Database\Connection;
  */
 class ValidatorInstance
 {
-    private array $errors    = [];
+    private array $errors = [];
     private array $validated = [];
-    private bool  $validated_flag = false;
+    private bool $validated_flag = false;
 
     public function __construct(
         private readonly array $data,
         private readonly array $rules,
         private readonly array $messages = [],
         private readonly ?Connection $db = null
-    ) {}
+    ) {
+    }
 
     public function fails(): bool
     {
@@ -58,14 +59,15 @@ class ValidatorInstance
         $this->validated_flag = true;
 
         foreach ($this->rules as $field => $ruleString) {
-            $rules    = is_string($ruleString) ? explode('|', $ruleString) : $ruleString;
-            $value    = $this->getValue($field);
+            $rules = is_string($ruleString) ? explode('|', $ruleString) : $ruleString;
+            $value = $this->getValue($field);
             $nullable = in_array('nullable', $rules, true);
 
             $this->validated[$field] = $value;
 
             foreach ($rules as $rule) {
-                if ($rule === 'nullable') continue;
+                if ($rule === 'nullable')
+                    continue;
 
                 // Skip remaining rules if value is null and nullable
                 if ($nullable && ($value === null || $value === '')) {
@@ -82,22 +84,22 @@ class ValidatorInstance
         [$ruleName, $param] = array_pad(explode(':', $rule, 2), 2, null);
 
         $passed = match ($ruleName) {
-            'required'  => $value !== null && $value !== '' && $value !== [],
-            'email'     => filter_var($value, FILTER_VALIDATE_EMAIL) !== false,
-            'string'    => is_string($value),
+            'required' => $value !== null && $value !== '' && $value !== [],
+            'email' => filter_var($value, FILTER_VALIDATE_EMAIL) !== false,
+            'string' => is_string($value),
             'int', 'integer' => filter_var($value, FILTER_VALIDATE_INT) !== false,
-            'numeric'   => is_numeric($value),
-            'boolean'   => in_array($value, [true, false, 0, 1, '0', '1'], true),
-            'url'       => filter_var($value, FILTER_VALIDATE_URL) !== false,
-            'date'      => strtotime((string) $value) !== false,
-            'min'       => is_string($value) ? mb_strlen($value) >= (int) $param : (float) $value >= (float) $param,
-            'max'       => is_string($value) ? mb_strlen($value) <= (int) $param : (float) $value <= (float) $param,
-            'in'        => in_array($value, explode(',', (string) $param), true),
-            'regex'     => (bool) preg_match($param, (string) $value),
+            'numeric' => is_numeric($value),
+            'boolean' => in_array($value, [true, false, 0, 1, '0', '1'], true),
+            'url' => filter_var($value, FILTER_VALIDATE_URL) !== false,
+            'date' => strtotime((string) $value) !== false,
+            'min' => is_string($value) ? mb_strlen($value) >= (int) $param : (float) $value >= (float) $param,
+            'max' => is_string($value) ? mb_strlen($value) <= (int) $param : (float) $value <= (float) $param,
+            'in' => in_array($value, explode(',', (string) $param), true),
+            'regex' => (bool) preg_match($param, (string) $value),
             'confirmed' => ($this->getValue($field . '_confirmation') === $value),
-            'unique'    => $this->validateUnique($value, (string) $param),
-            'nullable'  => true,
-            default     => true,
+            'unique' => $this->validateUnique($value, (string) $param),
+            'nullable' => true,
+            default => true,
         };
 
         if (!$passed) {
@@ -118,7 +120,7 @@ class ValidatorInstance
 
     private function addError(string $field, string $rule, ?string $param): void
     {
-        $key     = "{$field}.{$rule}";
+        $key = "{$field}.{$rule}";
         $message = $this->messages[$key] ?? $this->messages[$field] ?? $this->defaultMessage($field, $rule, $param);
         $this->errors[$field][] = $message;
     }
@@ -128,21 +130,21 @@ class ValidatorInstance
         $label = str_replace('_', ' ', $field);
 
         return match ($rule) {
-            'required'  => "Le champ {$label} est obligatoire.",
-            'email'     => "Le champ {$label} doit être une adresse email valide.",
-            'string'    => "Le champ {$label} doit être une chaîne de caractères.",
+            'required' => "Le champ {$label} est obligatoire.",
+            'email' => "Le champ {$label} doit être une adresse email valide.",
+            'string' => "Le champ {$label} doit être une chaîne de caractères.",
             'int', 'integer' => "Le champ {$label} doit être un entier.",
-            'numeric'   => "Le champ {$label} doit être numérique.",
-            'boolean'   => "Le champ {$label} doit être vrai ou faux.",
-            'url'       => "Le champ {$label} doit être une URL valide.",
-            'date'      => "Le champ {$label} doit être une date valide.",
-            'min'       => "Le champ {$label} doit avoir au minimum {$param}.",
-            'max'       => "Le champ {$label} ne doit pas dépasser {$param}.",
-            'in'        => "La valeur de {$label} n'est pas valide.",
-            'regex'     => "Le format de {$label} est invalide.",
+            'numeric' => "Le champ {$label} doit être numérique.",
+            'boolean' => "Le champ {$label} doit être vrai ou faux.",
+            'url' => "Le champ {$label} doit être une URL valide.",
+            'date' => "Le champ {$label} doit être une date valide.",
+            'min' => "Le champ {$label} doit avoir au minimum {$param}.",
+            'max' => "Le champ {$label} ne doit pas dépasser {$param}.",
+            'in' => "La valeur de {$label} n'est pas valide.",
+            'regex' => "Le format de {$label} est invalide.",
             'confirmed' => "La confirmation de {$label} ne correspond pas.",
-            'unique'    => "Cette valeur est déjà prise pour {$label}.",
-            default     => "Le champ {$label} est invalide.",
+            'unique' => "Cette valeur est déjà prise pour {$label}.",
+            default => "Le champ {$label} est invalide.",
         };
     }
 

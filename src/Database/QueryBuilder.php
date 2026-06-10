@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Core\Database;
+namespace Ironflow\Database;
 
-use Core\Support\Collection;
-use Core\Support\Paginator;
+use Ironflow\Support\Collection;
+use Ironflow\Support\Paginator;
 
 /**
  * Fluent QueryBuilder over Doctrine DBAL.
@@ -13,21 +13,22 @@ use Core\Support\Paginator;
  */
 class QueryBuilder
 {
-    private array  $wheres   = [];
-    private array  $bindings = [];
-    private array  $orders   = [];
-    private array  $groups   = [];
-    private array  $havings  = [];
-    private array  $joins    = [];
-    private array  $columns  = ['*'];
-    private ?int   $limitVal  = null;
-    private ?int   $offsetVal = null;
-    private bool   $distinct  = false;
+    private array $wheres = [];
+    private array $bindings = [];
+    private array $orders = [];
+    private array $groups = [];
+    private array $havings = [];
+    private array $joins = [];
+    private array $columns = ['*'];
+    private ?int $limitVal = null;
+    private ?int $offsetVal = null;
+    private bool $distinct = false;
 
     public function __construct(
         private readonly Connection $connection,
-        private readonly string     $table
-    ) {}
+        private readonly string $table
+    ) {
+    }
 
     // ─────────────────────── Columns ─────────────────────────────────
 
@@ -48,10 +49,10 @@ class QueryBuilder
     public function where(string $column, mixed $operator, mixed $value = null): static
     {
         if ($value === null) {
-            $value    = $operator;
+            $value = $operator;
             $operator = '=';
         }
-        $this->wheres[]   = "{$column} {$operator} ?";
+        $this->wheres[] = "{$column} {$operator} ?";
         $this->bindings[] = $value;
         return $this;
     }
@@ -59,10 +60,10 @@ class QueryBuilder
     public function orWhere(string $column, mixed $operator, mixed $value = null): static
     {
         if ($value === null) {
-            $value    = $operator;
+            $value = $operator;
             $operator = '=';
         }
-        $this->wheres[]   = "OR {$column} {$operator} ?";
+        $this->wheres[] = "OR {$column} {$operator} ?";
         $this->bindings[] = $value;
         return $this;
     }
@@ -73,9 +74,9 @@ class QueryBuilder
             $this->wheres[] = '1 = 0'; // Always false
             return $this;
         }
-        $placeholders     = implode(',', array_fill(0, count($values), '?'));
-        $this->wheres[]   = "{$column} IN ({$placeholders})";
-        $this->bindings   = array_merge($this->bindings, array_values($values));
+        $placeholders = implode(',', array_fill(0, count($values), '?'));
+        $this->wheres[] = "{$column} IN ({$placeholders})";
+        $this->bindings = array_merge($this->bindings, array_values($values));
         return $this;
     }
 
@@ -84,9 +85,9 @@ class QueryBuilder
         if (empty($values)) {
             return $this;
         }
-        $placeholders     = implode(',', array_fill(0, count($values), '?'));
-        $this->wheres[]   = "{$column} NOT IN ({$placeholders})";
-        $this->bindings   = array_merge($this->bindings, array_values($values));
+        $placeholders = implode(',', array_fill(0, count($values), '?'));
+        $this->wheres[] = "{$column} NOT IN ({$placeholders})";
+        $this->bindings = array_merge($this->bindings, array_values($values));
         return $this;
     }
 
@@ -104,7 +105,7 @@ class QueryBuilder
 
     public function whereBetween(string $column, mixed $min, mixed $max): static
     {
-        $this->wheres[]   = "{$column} BETWEEN ? AND ?";
+        $this->wheres[] = "{$column} BETWEEN ? AND ?";
         $this->bindings[] = $min;
         $this->bindings[] = $max;
         return $this;
@@ -112,7 +113,7 @@ class QueryBuilder
 
     public function whereLike(string $column, string $value): static
     {
-        $this->wheres[]   = "{$column} LIKE ?";
+        $this->wheres[] = "{$column} LIKE ?";
         $this->bindings[] = $value;
         return $this;
     }
@@ -122,8 +123,8 @@ class QueryBuilder
         $sub = new static($this->connection, $this->table);
         $subquery($sub);
         [$sql, $bindings] = $sub->toSql();
-        $this->wheres[]   = "EXISTS ({$sql})";
-        $this->bindings   = array_merge($this->bindings, $bindings);
+        $this->wheres[] = "EXISTS ({$sql})";
+        $this->bindings = array_merge($this->bindings, $bindings);
         return $this;
     }
 
@@ -155,7 +156,7 @@ class QueryBuilder
 
     public function orderBy(string $column, string $direction = 'ASC'): static
     {
-        $direction      = strtoupper($direction) === 'DESC' ? 'DESC' : 'ASC';
+        $direction = strtoupper($direction) === 'DESC' ? 'DESC' : 'ASC';
         $this->orders[] = "{$column} {$direction}";
         return $this;
     }
@@ -181,10 +182,10 @@ class QueryBuilder
     public function having(string $column, mixed $operator, mixed $value = null): static
     {
         if ($value === null) {
-            $value    = $operator;
+            $value = $operator;
             $operator = '=';
         }
-        $this->havings[]  = "{$column} {$operator} ?";
+        $this->havings[] = "{$column} {$operator} ?";
         $this->bindings[] = $value;
         return $this;
     }
@@ -286,8 +287,8 @@ class QueryBuilder
 
     public function paginate(int $perPage = 15, int $page = 1): Paginator
     {
-        $total   = $this->count();
-        $items   = $this->forPage($page, $perPage)->get();
+        $total = $this->count();
+        $items = $this->forPage($page, $perPage)->get();
         return new Paginator($items, $total, $perPage, $page);
     }
 
@@ -308,14 +309,14 @@ class QueryBuilder
     public function updateWhere(array $data): int
     {
         $setClauses = implode(', ', array_map(fn($k) => "{$k} = ?", array_keys($data)));
-        $setValues  = array_values($data);
+        $setValues = array_values($data);
         [$whereSql, $whereBindings] = $this->buildWhere();
 
         if (empty($setClauses)) {
             return 0;
         }
 
-        $sql      = "UPDATE {$this->table} SET {$setClauses}" . $whereSql;
+        $sql = "UPDATE {$this->table} SET {$setClauses}" . $whereSql;
         $bindings = array_merge($setValues, $whereBindings);
 
         return $this->connection->statement($sql, $bindings);
@@ -332,17 +333,17 @@ class QueryBuilder
 
     public function toSql(): array
     {
-        $distinct  = $this->distinct ? 'DISTINCT ' : '';
-        $cols      = implode(', ', $this->columns);
-        $sql       = "SELECT {$distinct}{$cols} FROM {$this->table}";
+        $distinct = $this->distinct ? 'DISTINCT ' : '';
+        $cols = implode(', ', $this->columns);
+        $sql = "SELECT {$distinct}{$cols} FROM {$this->table}";
 
         foreach ($this->joins as $join) {
             $sql .= " {$join}";
         }
 
         [$whereSql, $whereBindings] = $this->buildWhere();
-        $sql      .= $whereSql;
-        $bindings  = $whereBindings;
+        $sql .= $whereSql;
+        $bindings = $whereBindings;
 
         if (!empty($this->groups)) {
             $sql .= ' GROUP BY ' . implode(', ', $this->groups);
@@ -373,9 +374,9 @@ class QueryBuilder
             return ['', []];
         }
 
-        $clauses  = [];
+        $clauses = [];
         $bindings = $this->bindings;
-        $i        = 0;
+        $i = 0;
 
         foreach ($this->wheres as $where) {
             if ($i === 0) {
@@ -396,7 +397,7 @@ class QueryBuilder
 
     private function aggregate(string $expr): mixed
     {
-        $original     = $this->columns;
+        $original = $this->columns;
         $this->columns = [$expr . ' as _agg'];
         [$sql, $bindings] = $this->toSql();
         $this->columns = $original;

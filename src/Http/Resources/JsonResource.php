@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Core\Http\Resources;
+namespace Ironflow\Http\Resources;
 
-use Core\Http\Request;
-use Core\Http\Response;
+use Ironflow\Http\Request;
+use Ironflow\Http\Response;
 use JsonSerializable;
 
 /**
