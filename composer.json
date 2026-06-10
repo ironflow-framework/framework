@@ -3,7 +3,6 @@
     "description": "IronFlow — PHP 8.2+ HMVC Framework Core",
     "type": "library",
     "license": "MIT",
-    "version": "0.1.0",
     "require": {
         "php": ">=8.2",
         "doctrine/dbal": "^4.4",
