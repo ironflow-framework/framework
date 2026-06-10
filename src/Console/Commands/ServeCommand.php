@@ -48,7 +48,7 @@ class ServeCommand extends Command
         $port     = (int)    ($this->option('port') ?? 8080);
         $watchCss = (bool)   $this->option('watch-css');
         $root     = base_path('public');
-        $router   = base_path('server.php');
+        $router   = base_path('bin/server.php');
 
         // Auto-increment port if already in use
         $port = $this->findFreePort($host, $port);
