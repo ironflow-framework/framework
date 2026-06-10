@@ -105,7 +105,10 @@ class Engine
 
     private function normalizeTemplate(string $template): string
     {
-        // @blog/posts/index → @blog/posts/index (Twig already handles @ namespaces)
+        // Automatically append .html.twig if no extension is provided
+        if (!preg_match('/\.[\w]+$/', $template)) {
+            $template .= '.html.twig';
+        }
         return $template;
     }
 
