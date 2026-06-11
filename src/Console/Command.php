@@ -12,17 +12,24 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 /**
- * Base console command. Parses an Artisan-style signature into Symfony
- * InputArgument / InputOption definitions and exposes SymfonyStyle helpers.
+ * Base console command.
  *
- * Signature format: 'name:action {arg} {--option} {--flag=} {arg?=default}'
+ * Output convention — every line starts with 3 spaces:
+ *   "   BADGE  message"
+ *
+ * Available badges:
+ *   INFO  (blue)   — neutral information
+ *   DONE  (green)  — success
+ *   WARN  (yellow) — warning
+ *   ERROR (red)    — error
  */
 abstract class Command extends SymfonyCommand
 {
-    protected string $signature = '';
+    protected string $signature   = '';
     protected string $description = '';
-    protected SymfonyStyle $io;
-    protected InputInterface $input;
+
+    protected SymfonyStyle    $io;
+    protected InputInterface  $input;
     protected OutputInterface $output;
 
     protected function configure(): void
@@ -30,22 +37,129 @@ abstract class Command extends SymfonyCommand
         if (empty($this->signature)) {
             return;
         }
-
         $this->parseSignature();
         $this->setDescription($this->description);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $this->input = $input;
+        $this->input  = $input;
         $this->output = $output;
-        $this->io = new SymfonyStyle($input, $output);
+        $this->io     = new SymfonyStyle($input, $output);
         return $this->handle() ?? self::SUCCESS;
     }
 
     abstract protected function handle(): int|null;
 
-    // ─────────────────────── IO helpers ──────────────────────────────
+    // ── Output helpers ───────────────────────────────────────────────
+
+    protected function info(string $message): void
+    {
+        $this->output->writeln("   <options=bold;fg=blue>INFO</>  {$message}");
+    }
+
+    protected function success(string $message): void
+    {
+        $this->output->writeln("   <options=bold;fg=green>DONE</>  {$message}");
+    }
+
+    protected function warn(string $message): void
+    {
+        $this->output->writeln("   <options=bold;fg=yellow>WARN</>  {$message}");
+    }
+
+    protected function error(string $message): void
+    {
+        $this->output->writeln("   <options=bold;fg=red>ERROR</>  {$message}");
+    }
+
+    protected function line(string $message): void
+    {
+        $this->output->writeln($message);
+    }
+
+    protected function newLine(int $count = 1): void
+    {
+        $this->output->writeln(array_fill(0, $count, ''));
+    }
+
+    /**
+     * Dot-padded two-column detail line:
+     *   "   Left label ........ Right value"
+     *
+     * @param string $style  Optional Symfony Console style tag for the right side
+     *                       (only applied when $right contains no existing tags).
+     */
+    protected function twoColumnDetail(string $left, string $right, string $style = ''): void
+    {
+        $plainLeft   = preg_replace('/<[^>]+>/', '', $left) ?? $left;
+        $dots        = str_repeat('.', max(2, 46 - mb_strlen(trim($plainLeft))));
+        $styledRight = ($style && !str_contains($right, '<'))
+            ? "<{$style}>{$right}</>"
+            : $right;
+        $this->output->writeln("   {$left} <fg=gray>{$dots}</> {$styledRight}");
+    }
+
+    /**
+     * Migration result line with dot-padding and a timing/status badge:
+     *
+     *   "   create_posts_table .........  12ms  DONE"
+     *   "   create_posts_table .........  12ms  ROLLBACK"
+     *
+     * @param bool $rollback  true → yellow ROLLBACK badge, false → green DONE badge
+     */
+    protected function migrationLine(string $name, int $ms, bool $rollback = false): void
+    {
+        $badge = $rollback
+            ? '<options=bold;fg=yellow>ROLLBACK</>'
+            : '<options=bold;fg=green>DONE</>';
+
+        $timeColor = match (true) {
+            $ms < 100  => 'fg=green',
+            $ms < 500  => 'fg=yellow',
+            default    => 'fg=red',
+        };
+
+        $nameTrim = mb_strimwidth($name, 0, 50, '…');
+        $timePad  = str_pad("{$ms}ms", 7, ' ', STR_PAD_LEFT);
+        $dots     = str_repeat('.', max(2, 52 - mb_strlen($nameTrim)));
+
+        $this->output->writeln(
+            "   {$nameTrim} <fg=gray>{$dots}</> <{$timeColor}>{$timePad}</>  {$badge}"
+        );
+    }
+
+    /**
+     * Run a labeled task — prints a spinner then DONE / FAIL on completion.
+     */
+    protected function task(string $title, callable $task): bool
+    {
+        $this->output->write("   <fg=gray>…</>  {$title}");
+        try {
+            $result = $task();
+            $ok = ($result !== false);
+        } catch (\Throwable) {
+            $ok = false;
+        }
+        $this->output->write("\r");
+        if ($ok) {
+            $this->output->writeln("   <options=bold;fg=green>DONE</>  {$title}");
+        } else {
+            $this->output->writeln("   <options=bold;fg=red>FAIL</>  {$title}");
+        }
+        return $ok;
+    }
+
+    protected function progress(int $max, callable $callback): void
+    {
+        $bar = $this->io->createProgressBar($max);
+        $bar->start();
+        $callback($bar);
+        $bar->finish();
+        $this->output->writeln('');
+    }
+
+    // ── Interactive helpers ──────────────────────────────────────────
 
     protected function argument(string $name): mixed
     {
@@ -57,81 +171,6 @@ abstract class Command extends SymfonyCommand
         return $this->input->getOption($name);
     }
 
-    protected function info(string $message): void
-    {
-        $this->io->writeln("<info>{$message}</info>");
-    }
-    protected function warn(string $message): void
-    {
-        $this->io->writeln("<comment>{$message}</comment>");
-    }
-    protected function error(string $message): void
-    {
-        $this->io->writeln("<error>{$message}</error>");
-    }
-    protected function success(string $message): void
-    {
-        $this->io->writeln("<info>✓ {$message}</info>");
-    }
-    protected function line(string $message): void
-    {
-        $this->io->writeln($message);
-    }
-
-    protected function newLine(int $count = 1): void
-    {
-        $this->io->newLine($count);
-    }
-
-    /**
-     * Run a labeled task. Prints "✓ title" on success or "✗ title" on failure.
-     * The callable should return false (or throw) to indicate failure.
-     */
-    protected function task(string $title, callable $task): bool
-    {
-        $this->io->write("  <fg=blue>…</> {$title}");
-        try {
-            $result = $task();
-            $ok = ($result !== false);
-        } catch (\Throwable) {
-            $ok = false;
-        }
-        $this->io->write("\r");
-        if ($ok) {
-            $this->io->writeln("  <info>✓</info> {$title}");
-        } else {
-            $this->io->writeln("  <error>✗</error> {$title}");
-        }
-        return $ok;
-    }
-
-    /**
-     * Print a two-column label → value line (dot-padded, like Laravel's `twoColumnDetail`).
-     */
-    protected function twoColumnDetail(string $left, string $right, string $style = 'fg=gray'): void
-    {
-        $width = 30;
-        $dots  = str_pad($left, $width, '.');
-        $this->io->writeln("  <{$style}>{$dots}</> <options=bold>{$right}</>");
-    }
-
-    /**
-     * Create a progress bar, invoke the callback with it, then finish.
-     * Usage: $this->progress(count($items), function($bar) use ($items) { … $bar->advance(); });
-     */
-    protected function progress(int $max, callable $callback): void
-    {
-        $bar = $this->io->createProgressBar($max);
-        $bar->start();
-        $callback($bar);
-        $bar->finish();
-        $this->io->newLine();
-    }
-
-    /**
-     * Return the argument value, or interactively ask the user if it is empty.
-     * Make the argument optional in the signature ({name?}) to enable this.
-     */
     protected function argumentOrAsk(string $name, string $question, ?string $default = null): string
     {
         $value = (string) ($this->input->getArgument($name) ?? '');
@@ -166,13 +205,11 @@ abstract class Command extends SymfonyCommand
         $this->io->table($headers, $rows);
     }
 
-    // ─────────────────────── Signature parsing ───────────────────────
+    // ── Signature parsing ────────────────────────────────────────────
 
     private function parseSignature(): void
     {
-        // name:action {arg} {arg?} {arg=default} {--option} {--option=} {--option=default}
         $parts = preg_split('/\s+/', trim($this->signature), 2);
-
         $this->setName($parts[0]);
 
         if (!isset($parts[1])) {
@@ -183,7 +220,6 @@ abstract class Command extends SymfonyCommand
 
         foreach ($matches[1] as $token) {
             $token = trim($token);
-
             if (str_starts_with($token, '--')) {
                 $this->parseOption(substr($token, 2));
             } else {
@@ -199,12 +235,12 @@ abstract class Command extends SymfonyCommand
             [$token, $description] = explode(':', $token, 2);
         }
 
-        $mode = InputArgument::REQUIRED;
+        $mode    = InputArgument::REQUIRED;
         $default = null;
 
         if (str_ends_with($token, '?')) {
             $token = rtrim($token, '?');
-            $mode = InputArgument::OPTIONAL;
+            $mode  = InputArgument::OPTIONAL;
         } elseif (str_contains($token, '=')) {
             [$token, $default] = explode('=', $token, 2);
             $mode = InputArgument::OPTIONAL;
@@ -220,12 +256,12 @@ abstract class Command extends SymfonyCommand
             [$token, $description] = explode(':', $token, 2);
         }
 
-        $mode = InputOption::VALUE_NONE;
+        $mode    = InputOption::VALUE_NONE;
         $default = null;
 
         if (str_ends_with($token, '=')) {
             $token = rtrim($token, '=');
-            $mode = InputOption::VALUE_OPTIONAL;
+            $mode  = InputOption::VALUE_OPTIONAL;
         } elseif (str_contains($token, '=')) {
             [$token, $default] = explode('=', $token, 2);
             $mode = InputOption::VALUE_OPTIONAL;

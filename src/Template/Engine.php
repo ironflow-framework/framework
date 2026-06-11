@@ -37,6 +37,14 @@ class Engine
             $this->loader->addPath($viewsPath);
         }
 
+        // Built-in view subdirectory namespaces
+        foreach (['layouts', 'errors', 'components', 'partials', 'emails'] as $ns) {
+            $nsPath = $viewsPath . '/' . $ns;
+            if (is_dir($nsPath)) {
+                $this->loader->addPath($nsPath, $ns);
+            }
+        }
+
         // Core error views fallback namespace
         $coreViews = dirname(__DIR__) . '/Exceptions/views';
         if (is_dir($coreViews)) {

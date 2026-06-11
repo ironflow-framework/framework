@@ -25,28 +25,28 @@ class MigrateFreshCommand extends Command
         }
 
         $migrator = new Migrator($this->db);
-        $path = base_path('modules');
+        $path     = base_path('modules');
+        $paths    = glob($path . '/*/Database/Migrations') ?: [];
 
-        // Collect paths
-        $paths = glob($path . '/*/Database/Migrations') ?: [];
+        $this->newLine();
 
         if (empty($paths)) {
             $migrator->fresh($path);
         } else {
-            // Fresh on first path to drop tables, then run others
-            $ran = $migrator->fresh($paths[0]);
-            foreach ($ran as $m) {
-                $this->success("Migrated: {$m}");
+            foreach ($migrator->fresh($paths[0]) as $item) {
+                $this->migrationLine($item['file'], $item['ms']);
             }
             for ($i = 1; $i < count($paths); $i++) {
-                foreach ($migrator->run($paths[$i]) as $m) {
-                    $this->success("Migrated: {$m}");
+                foreach ($migrator->run($paths[$i]) as $item) {
+                    $this->migrationLine($item['file'], $item['ms']);
                 }
             }
         }
 
+        $this->newLine();
+
         if ($this->option('seed')) {
-            $this->line('Seeding database...');
+            $this->info('Seeding database...');
         }
 
         return self::SUCCESS;

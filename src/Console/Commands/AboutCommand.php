@@ -19,57 +19,58 @@ class AboutCommand extends Command
 
     protected function handle(): int
     {
-        $app = Application::getInstance();
+        $app     = Application::getInstance();
+        $version = $_ENV['APP_VERSION'] ?? '0.2.0';
 
         $this->newLine();
-        $this->line('  <options=bold,fg=blue>IronFlow Framework</> — Application Information');
-        $this->line('  ' . str_repeat('─', 54));
+        $this->output->writeln("   <options=bold;fg=blue>INFO</>  IronFlow <options=bold>v{$version}</> — Application Information");
         $this->newLine();
 
         // ── Environment ──────────────────────────────────────────────
-        $this->line('  <options=bold>Environment</>');
-        $this->twoColumnDetail('  PHP Version',       PHP_VERSION);
-        $this->twoColumnDetail('  Framework Version', $_ENV['APP_VERSION'] ?? '0.1.0');
-        $this->twoColumnDetail('  App Name',          $_ENV['APP_NAME'] ?? 'IronFlow');
-        $this->twoColumnDetail('  Environment',       $_ENV['APP_ENV'] ?? 'production');
-        $this->twoColumnDetail('  Debug Mode',        ($_ENV['APP_DEBUG'] ?? 'false') === 'true' ? '<info>enabled</info>' : '<fg=gray>disabled</>');
-        $this->twoColumnDetail('  Base Path',         base_path());
+        $this->output->writeln('   <options=bold>Environment</>');
+        $this->twoColumnDetail('   PHP',       PHP_VERSION);
+        $this->twoColumnDetail('   Framework', $version);
+        $this->twoColumnDetail('   App',       $_ENV['APP_NAME'] ?? 'IronFlow');
+        $this->twoColumnDetail('   Env',       $_ENV['APP_ENV'] ?? 'production');
+        $debug = ($_ENV['APP_DEBUG'] ?? 'false') === 'true';
+        $this->twoColumnDetail('   Debug', $debug ? '<fg=yellow>enabled</>' : '<fg=gray>disabled</>');
+        $this->twoColumnDetail('   Path',      base_path());
         $this->newLine();
 
         // ── Cache ────────────────────────────────────────────────────
-        $this->line('  <options=bold>Cache</>');
+        $this->output->writeln('   <options=bold>Cache</>');
         $cacheDriver = function_exists('apcu_fetch') ? 'APCu' : 'File';
-        $this->twoColumnDetail('  Driver', $cacheDriver);
+        $this->twoColumnDetail('   Driver', $cacheDriver);
         $this->newLine();
 
         // ── Database ─────────────────────────────────────────────────
-        $this->line('  <options=bold>Database</>');
+        $this->output->writeln('   <options=bold>Database</>');
         try {
             /** @var Connection $db */
-            $db = $app->getContainer()->make(Connection::class);
+            $db  = $app->getContainer()->make(Connection::class);
             $cls = get_class($db->getPlatform());
             $platform = substr($cls, (int) strrpos($cls, '\\') + 1);
-            $this->twoColumnDetail('  Driver', $platform);
+            $this->twoColumnDetail('   Driver', $platform);
         } catch (\Throwable) {
-            $this->twoColumnDetail('  Driver', '<fg=gray>not connected</>');
+            $this->twoColumnDetail('   Driver', '<fg=gray>not connected</>');
         }
         $this->newLine();
 
         // ── Modules ──────────────────────────────────────────────────
-        $this->line('  <options=bold>Modules</>');
+        $this->output->writeln('   <options=bold>Modules</>');
         try {
             /** @var ModuleManager $manager */
             $manager = $app->getContainer()->make(ModuleManager::class);
             $modules = $manager->getLoadedModules();
             if (empty($modules)) {
-                $this->line('  <fg=gray>  (none)</>');
+                $this->output->writeln('   <fg=gray>(none)</>');
             } else {
                 foreach ($modules as $name => $module) {
-                    $this->twoColumnDetail("  {$name}", '<info>loaded</>');
+                    $this->twoColumnDetail("   {$name}", '<fg=green>loaded</>');
                 }
             }
         } catch (\Throwable) {
-            $this->line('  <fg=gray>  (module system not available)</>');
+            $this->output->writeln('   <fg=gray>(module system not available)</>');
         }
         $this->newLine();
 

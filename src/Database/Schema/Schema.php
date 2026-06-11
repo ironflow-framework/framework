@@ -6,15 +6,18 @@ namespace Ironflow\Database\Schema;
 
 use Ironflow\Application;
 use Ironflow\Database\Connection;
-use Doctrine\DBAL\Schema\Table;
-use Doctrine\DBAL\Schema\Column;
 
 /**
  * Schema facade — create, alter, drop tables.
- * Translates Blueprint calls into Doctrine DBAL Schema operations.
+ *
+ * Dialect support: SQLite · MySQL / MariaDB · PostgreSQL · generic fallback.
+ * All SQL is generated from the Blueprint without going through Doctrine's DDL
+ * compiler, so every dialect quirk is handled explicitly here.
  */
 class Schema
 {
+    // ── Public API ───────────────────────────────────────────────────
+
     public static function create(string $table, callable $callback): void
     {
         $blueprint = new Blueprint($table);
@@ -53,62 +56,80 @@ class Schema
         return isset($cols[strtolower($column)]);
     }
 
+    // ── Dialect helpers ──────────────────────────────────────────────
+
+    /**
+     * Returns a short dialect key from the platform class name.
+     * Supported: 'sqlite' | 'mysql' | 'pgsql' | 'generic'
+     */
+    private static function dialect(mixed $platform): string
+    {
+        $cls = strtolower(class_basename(get_class($platform)));
+        if (str_contains($cls, 'sqlite'))                              return 'sqlite';
+        if (str_contains($cls, 'mysql') || str_contains($cls, 'maria')) return 'mysql';
+        if (str_contains($cls, 'postgre') || str_contains($cls, 'pgsql')) return 'pgsql';
+        return 'generic';
+    }
+
+    /** Identifier quoting character for this dialect. */
+    private static function q(string $dialect): string
+    {
+        return $dialect === 'mysql' ? '`' : '"';
+    }
+
+    // ── Table builder ────────────────────────────────────────────────
+
     private static function buildTable(Blueprint $blueprint, bool $alter): void
     {
-        $conn = self::connection();
-        $platform = $conn->getPlatform();
-        $sm = $conn->getSchemaManager();
+        $conn      = self::connection();
+        $platform  = $conn->getPlatform();
+        $sm        = $conn->getSchemaManager();
+        $tableName = $blueprint->getTableName();
+        $dialect   = self::dialect($platform);
+        $q         = self::q($dialect);
 
-        if ($alter && $sm->tablesExist([$blueprint->getTableName()])) {
-            // Build ALTER statements
+        // ── ALTER: add columns only ───────────────────────────────────
+        if ($alter && $sm->tablesExist([$tableName])) {
             foreach ($blueprint->getColumns() as $col) {
                 if ($col instanceof ColumnDefinition) {
-                    $opts = $col->getOptions();
                     $conn->statement(
-                        self::buildAddColumnSql($blueprint->getTableName(), $col->name, $col->type, $opts, $platform)
+                        self::buildAddColumnSql($tableName, $col->name, $col->type, $col->getOptions(), $dialect)
                     );
                 }
             }
             return;
         }
 
-        // CREATE TABLE
-        $cols = [];
-        $primaryKey = null;
+        // ── CREATE TABLE ──────────────────────────────────────────────
+        $cols       = [];
+        $skipPkCols = [];   // PK already embedded in column def (SQLite AUTOINCREMENT)
+        $extraSqls  = [];   // Statements executed after CREATE TABLE (indexes)
 
+        // Columns
         foreach ($blueprint->getColumns() as $col) {
             if (is_array($col)) {
-                // id() shorthand
-                $opts = $col['options'];
-                $autoInc = $opts['autoincrement'] ?? false;
-                $nullable = !($opts['notnull'] ?? true);
+                // id() / bigIncrements() — auto-increment primary key
+                $autoInc = $col['options']['autoincrement'] ?? false;
+                $nullable = !($col['options']['notnull'] ?? true);
 
-                $typeSql = self::mapTypeSql($col['type'], $opts, $platform);
-                $colSql = "`{$col['name']}` {$typeSql}";
                 if ($autoInc) {
-                    $colSql .= ' NOT NULL AUTO_INCREMENT';
-                } elseif ($nullable) {
-                    $colSql .= ' NULL';
+                    $cols[] = self::buildAutoIncrementCol($col['name'], $dialect, $q, $skipPkCols);
                 } else {
-                    $colSql .= ' NOT NULL';
-                    if (array_key_exists('default', $opts)) {
-                        $colSql .= ' DEFAULT ' . self::quoteDefault($opts['default']);
+                    $typeSql = self::mapType($col['type'], $col['options'], $dialect);
+                    $colSql  = "{$q}{$col['name']}{$q} {$typeSql}";
+                    $colSql .= $nullable ? ' NULL' : ' NOT NULL';
+                    if (!$nullable && array_key_exists('default', $col['options'])) {
+                        $colSql .= ' DEFAULT ' . self::quoteDefault($col['options']['default']);
                     }
-                }
-                $cols[] = $colSql;
-                if ($opts['autoincrement'] ?? false) {
-                    $primaryKey = $col['name'];
+                    $cols[] = $colSql;
                 }
             } elseif ($col instanceof ColumnDefinition) {
-                $opts = $col->getOptions();
-                $typeSql = self::mapTypeSql($col->type, $opts, $platform);
-                $colSql = "`{$col->name}` {$typeSql}";
+                $opts    = $col->getOptions();
+                $typeSql = self::mapType($col->type, $opts, $dialect);
                 $nullable = !($opts['notnull'] ?? true);
-                if ($nullable) {
-                    $colSql .= ' NULL';
-                } else {
-                    $colSql .= ' NOT NULL';
-                }
+
+                $colSql  = "{$q}{$col->name}{$q} {$typeSql}";
+                $colSql .= $nullable ? ' NULL' : ' NOT NULL';
                 if (array_key_exists('default', $opts)) {
                     $colSql .= ' DEFAULT ' . self::quoteDefault($opts['default']);
                 }
@@ -116,91 +137,171 @@ class Schema
             }
         }
 
-        // Primary key
+        // Constraints and indices
         foreach ($blueprint->getIndices() as $idx) {
-            if ($idx['type'] === 'primary') {
-                $cols[] = 'PRIMARY KEY (`' . implode('`, `', $idx['columns']) . '`)';
-            }
-        }
+            $idxCols = implode(', ', array_map(fn($c) => "{$q}{$c}{$q}", $idx['columns']));
 
-        // Unique / Index
-        foreach ($blueprint->getIndices() as $idx) {
-            if ($idx['type'] === 'unique') {
-                $cols[] = 'UNIQUE KEY (`' . implode('`, `', $idx['columns']) . '`)';
+            if ($idx['type'] === 'primary') {
+                // Skip when the PK is already embedded in the column definition (SQLite)
+                if (!empty(array_intersect($idx['columns'], $skipPkCols))) {
+                    continue;
+                }
+                $cols[] = "PRIMARY KEY ({$idxCols})";
+
+            } elseif ($idx['type'] === 'unique') {
+                // MySQL uses UNIQUE KEY (...); all others use UNIQUE (...)
+                $cols[] = $dialect === 'mysql'
+                    ? "UNIQUE KEY ({$idxCols})"
+                    : "UNIQUE ({$idxCols})";
+
             } elseif ($idx['type'] === 'index') {
-                $cols[] = 'INDEX (`' . implode('`, `', $idx['columns']) . '`)';
+                if ($dialect === 'mysql') {
+                    // MySQL supports inline INDEX inside CREATE TABLE
+                    $cols[] = "INDEX ({$idxCols})";
+                } else {
+                    // SQLite and PostgreSQL require a separate CREATE INDEX statement
+                    $idxName     = 'idx_' . $tableName . '_' . implode('_', $idx['columns']);
+                    $extraSqls[] = "CREATE INDEX IF NOT EXISTS {$q}{$idxName}{$q}"
+                                 . " ON {$q}{$tableName}{$q} ({$idxCols})";
+                }
             }
         }
 
         // Foreign keys
-        foreach ($blueprint->getForeigns() as $fk) {
-            $fkSql = "FOREIGN KEY (`{$fk['column']}`) REFERENCES `{$fk['table']}` (`{$fk['ref_column']}`)";
-            if ($fk['on_delete']) {
-                $fkSql .= " ON DELETE {$fk['on_delete']}";
+        // SQLite ignores FK constraints unless PRAGMA foreign_keys = ON is set,
+        // and they cannot be added inline anyway when using the simple CREATE TABLE path.
+        // PostgreSQL and MySQL support inline FOREIGN KEY.
+        if ($dialect !== 'sqlite') {
+            foreach ($blueprint->getForeigns() as $fk) {
+                $fkSql = "FOREIGN KEY ({$q}{$fk['column']}{$q})"
+                       . " REFERENCES {$q}{$fk['table']}{$q} ({$q}{$fk['ref_column']}{$q})";
+                if ($fk['on_delete']) {
+                    $fkSql .= " ON DELETE {$fk['on_delete']}";
+                }
+                $cols[] = $fkSql;
             }
-            $cols[] = $fkSql;
         }
 
-        $driver = strtolower(class_basename(get_class($platform)));
-        $isSqlite = str_contains($driver, 'sqlite');
+        // Closing clause
+        $suffix = $dialect === 'mysql'
+            ? ' ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+            : '';
 
-        $engine = $isSqlite ? '' : ' ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci';
-        $backtick = $isSqlite ? '"' : '`';
-
-        // For SQLite, simplify
-        if ($isSqlite) {
-            $cols = array_filter($cols, fn($c) => !str_starts_with(trim($c), 'FOREIGN KEY'));
-        }
-
-        $sql = "CREATE TABLE IF NOT EXISTS `{$blueprint->getTableName()}` (\n  "
-            . implode(",\n  ", $cols)
-            . "\n){$engine}";
-
-        // SQLite doesn't like backticks
-        if ($isSqlite) {
-            $sql = str_replace('`', '"', $sql);
-        }
+        $sql = "CREATE TABLE IF NOT EXISTS {$q}{$tableName}{$q} (\n  "
+             . implode(",\n  ", $cols)
+             . "\n){$suffix}";
 
         $conn->statement($sql);
+
+        foreach ($extraSqls as $extraSql) {
+            $conn->statement($extraSql);
+        }
     }
 
-    private static function mapTypeSql(string $type, array $opts, mixed $platform): string
+    /**
+     * Build the auto-increment primary-key column definition.
+     * Each dialect has its own syntax for this.
+     *
+     * @param string[] $skipPkCols  Accumulates columns whose PK is embedded (SQLite).
+     */
+    private static function buildAutoIncrementCol(
+        string $name,
+        string $dialect,
+        string $q,
+        array  &$skipPkCols
+    ): string {
+        switch ($dialect) {
+            case 'sqlite':
+                // INTEGER PRIMARY KEY AUTOINCREMENT must be declared on the column;
+                // a separate PRIMARY KEY constraint is not allowed alongside it.
+                $skipPkCols[] = $name;
+                return "{$q}{$name}{$q} INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL";
+
+            case 'pgsql':
+                // BIGSERIAL expands to BIGINT + an implicit sequence.
+                // The PRIMARY KEY constraint is added separately.
+                return "{$q}{$name}{$q} BIGSERIAL NOT NULL";
+
+            case 'mysql':
+            default:
+                // BIGINT UNSIGNED NOT NULL AUTO_INCREMENT; PRIMARY KEY added separately.
+                return "{$q}{$name}{$q} BIGINT UNSIGNED NOT NULL AUTO_INCREMENT";
+        }
+    }
+
+    // ── Column type mapping ──────────────────────────────────────────
+
+    private static function mapType(string $type, array $opts, string $dialect): string
     {
-        $driver = strtolower(class_basename(get_class($platform)));
-        $isSqlite = str_contains($driver, 'sqlite');
+        $unsigned = $opts['unsigned'] ?? false;
 
         return match ($type) {
-            'bigint' => $isSqlite ? 'INTEGER' : 'BIGINT UNSIGNED',
-            'integer' => $isSqlite ? 'INTEGER' : 'INT',
-            'string' => 'VARCHAR(' . ($opts['length'] ?? 255) . ')',
-            'text' => 'TEXT',
-            'boolean' => $isSqlite ? 'INTEGER' : 'TINYINT(1)',
+            'bigint' => match ($dialect) {
+                'sqlite'  => 'INTEGER',
+                'mysql'   => $unsigned ? 'BIGINT UNSIGNED' : 'BIGINT',
+                default   => 'BIGINT',
+            },
+            'integer' => match ($dialect) {
+                'sqlite'  => 'INTEGER',
+                'mysql'   => $unsigned ? 'INT UNSIGNED' : 'INT',
+                default   => 'INTEGER',
+            },
+            'string'  => 'VARCHAR(' . ($opts['length'] ?? 255) . ')',
+            'text'    => 'TEXT',
+            'boolean' => match ($dialect) {
+                'sqlite'  => 'INTEGER',
+                'mysql'   => 'TINYINT(1)',
+                default   => 'BOOLEAN',
+            },
             'float', 'decimal' => 'DECIMAL(' . ($opts['precision'] ?? 8) . ',' . ($opts['scale'] ?? 2) . ')',
-            'json' => $isSqlite ? 'TEXT' : 'JSON',
-            'datetime_mutable', 'datetime' => 'DATETIME',
-            'date_mutable', 'date' => 'DATE',
+            'json' => match ($dialect) {
+                'sqlite'  => 'TEXT',
+                'pgsql'   => 'JSONB',
+                default   => 'JSON',
+            },
+            'datetime_mutable', 'datetime' => match ($dialect) {
+                'sqlite'  => 'TEXT',
+                'pgsql'   => 'TIMESTAMP',
+                default   => 'DATETIME',
+            },
+            'date_mutable', 'date' => match ($dialect) {
+                'sqlite'  => 'TEXT',
+                default   => 'DATE',
+            },
             default => strtoupper($type),
         };
     }
 
+    // ── ALTER TABLE helper ───────────────────────────────────────────
+
+    private static function buildAddColumnSql(
+        string $table,
+        string $col,
+        string $type,
+        array  $opts,
+        string $dialect
+    ): string {
+        $q        = self::q($dialect);
+        $typeSql  = self::mapType($type, $opts, $dialect);
+        $nullable = !($opts['notnull'] ?? true);
+        $null     = $nullable ? 'NULL' : 'NOT NULL';
+
+        // PostgreSQL uses ADD COLUMN; others too, but without the redundant COLUMN keyword
+        // it still works everywhere
+        return "ALTER TABLE {$q}{$table}{$q} ADD COLUMN {$q}{$col}{$q} {$typeSql} {$null}";
+    }
+
+    // ── Default value quoting ────────────────────────────────────────
+
     private static function quoteDefault(mixed $value): string
     {
-        if ($value === null)
-            return 'NULL';
-        if (is_bool($value))
-            return $value ? '1' : '0';
-        if (is_int($value) || is_float($value))
-            return (string) $value;
+        if ($value === null)                   return 'NULL';
+        if (is_bool($value))                   return $value ? '1' : '0';
+        if (is_int($value) || is_float($value)) return (string) $value;
         return "'" . addslashes((string) $value) . "'";
     }
 
-    private static function buildAddColumnSql(string $table, string $col, string $type, array $opts, mixed $platform): string
-    {
-        $typeSql = self::mapTypeSql($type, $opts, $platform);
-        $nullable = !($opts['notnull'] ?? true);
-        $null = $nullable ? 'NULL' : 'NOT NULL';
-        return "ALTER TABLE `{$table}` ADD COLUMN `{$col}` {$typeSql} {$null}";
-    }
+    // ── Connection ───────────────────────────────────────────────────
 
     private static function connection(): Connection
     {
