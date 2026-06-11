@@ -2,21 +2,12 @@
 
 declare(strict_types=1);
 
+namespace Ironflow\Tests\Unit;
+
 use Ironflow\Container;
 use Ironflow\Events\Dispatcher;
-
-// ── Fixtures ──────────────────────────────────────────────────────────────────
-
-final class SomethingHappened
-{
-    public function __construct(public readonly string $payload)
-    {
-    }
-}
-
-final class SomethingElse
-{
-}
+use Ironflow\Tests\Unit\Fixtures\SomethingElse;
+use Ironflow\Tests\Unit\Fixtures\SomethingHappened;
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 

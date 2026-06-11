@@ -79,8 +79,8 @@ abstract class Factory
 
     // ─────────────────────── Fake helpers ────────────────────────────
 
-    protected function fake(): FakeGenerator
+    protected function fake(string $locale = 'en_US'): FakeGenerator
     {
-        return new FakeGenerator();
+        return new FakeGenerator($locale);
     }
 }

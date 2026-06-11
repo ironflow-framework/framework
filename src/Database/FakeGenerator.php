@@ -4,99 +4,56 @@ declare(strict_types=1);
 
 namespace Ironflow\Database;
 
+use Faker\Factory as FakerFactory;
+use Faker\Generator as FakerGenerator;
+
 /**
- * Minimal fake data generator. No external dependencies.
+ * Thin wrapper around Faker\Generator that adds IronFlow-specific helpers
+ * (password hashing) and normalises a few signatures that differ from Faker's
+ * defaults (words → string, dateTimeBetween → formatted string).
+ *
+ * Any method or property not declared here is proxied to the underlying
+ * Faker generator, giving access to the full Faker API.
  */
 class FakeGenerator
 {
-    private static array $firstNames = ['Alice', 'Bob', 'Charlie', 'Diana', 'Ethan', 'Fiona', 'George', 'Hannah', 'Ivan', 'Julia'];
-    private static array $lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Wilson', 'Moore'];
-    private static array $words = ['lorem', 'ipsum', 'dolor', 'sit', 'amet', 'consectetur', 'adipiscing', 'elit', 'sed', 'do', 'eiusmod', 'tempor', 'incididunt', 'ut', 'labore'];
-    private static array $domains = ['example.com', 'test.org', 'demo.net', 'sample.io', 'fake.dev'];
+    private FakerGenerator $faker;
 
-    public function name(): string
+    public function __construct(string $locale = 'en_US')
     {
-        return self::$firstNames[array_rand(self::$firstNames)] . ' ' . self::$lastNames[array_rand(self::$lastNames)];
+        $this->faker = FakerFactory::create($locale);
     }
 
-    public function firstName(): string
-    {
-        return self::$firstNames[array_rand(self::$firstNames)];
-    }
-
-    public function lastName(): string
-    {
-        return self::$lastNames[array_rand(self::$lastNames)];
-    }
-
-    public function email(): string
-    {
-        $name = strtolower($this->firstName()) . mt_rand(1, 999);
-        $domain = self::$domains[array_rand(self::$domains)];
-        return "{$name}@{$domain}";
-    }
+    // ── IronFlow-specific helpers ─────────────────────────────────────
 
     public function password(string $plain = 'password'): string
     {
         return \Ironflow\Auth\Hash::make($plain);
     }
 
-    public function sentence(int $wordCount = 8): string
-    {
-        $words = [];
-        for ($i = 0; $i < $wordCount; $i++) {
-            $words[] = self::$words[array_rand(self::$words)];
-        }
-        return ucfirst(implode(' ', $words)) . '.';
-    }
+    // ── Normalised signatures (different from Faker defaults) ─────────
 
-    public function paragraph(int $sentences = 3): string
-    {
-        $parts = [];
-        for ($i = 0; $i < $sentences; $i++) {
-            $parts[] = $this->sentence(mt_rand(6, 12));
-        }
-        return implode(' ', $parts);
-    }
-
+    /** Always returns a plain string; Faker's words() returns an array by default. */
     public function words(int $n = 3): string
     {
-        $words = [];
-        for ($i = 0; $i < $n; $i++) {
-            $words[] = self::$words[array_rand(self::$words)];
-        }
-        return implode(' ', $words);
+        return $this->faker->words($n, true);
     }
 
-    public function slug(): string
-    {
-        return str_slug($this->words(3));
-    }
-
-    public function boolean(): bool
-    {
-        return (bool) mt_rand(0, 1);
-    }
-
-    public function numberBetween(int $min, int $max): int
-    {
-        return mt_rand($min, $max);
-    }
-
+    /** Always returns a Y-m-d H:i:s string; Faker returns a DateTime object. */
     public function dateTimeBetween(string $start = '-1 year', string $end = 'now'): string
     {
-        $startTs = strtotime($start);
-        $endTs = strtotime($end);
-        return date('Y-m-d H:i:s', mt_rand($startTs, $endTs));
+        return $this->faker->dateTimeBetween($start, $end)->format('Y-m-d H:i:s');
     }
 
-    public function randomElement(array $elements): mixed
+    // ── Faker proxy ───────────────────────────────────────────────────
+
+    public function __call(string $name, array $args): mixed
     {
-        return $elements[array_rand($elements)];
+        return $this->faker->$name(...$args);
     }
 
-    public function url(): string
+    public function __get(string $name): mixed
     {
-        return 'https://www.' . self::$domains[array_rand(self::$domains)];
+        return $this->faker->$name;
     }
 }

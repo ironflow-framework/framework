@@ -30,10 +30,8 @@ class TinkerCommand extends Command
 
     private function runPsySh(Application $app): int
     {
-        $config = new \Psy\Configuration();
-        $config->setStartingVariables(['app' => $app]);
-
-        $shell = new \Psy\Shell($config);
+        $shell = new \Psy\Shell(new \Psy\Configuration());
+        $shell->setScopeVariables(['app' => $app]);
         $shell->run();
 
         return self::SUCCESS;

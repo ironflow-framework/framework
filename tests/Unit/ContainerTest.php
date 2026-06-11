@@ -2,21 +2,13 @@
 
 declare(strict_types=1);
 
+namespace Ironflow\Tests\Unit;
+
 use Ironflow\Container;
 use Ironflow\Exceptions\ContainerException;
-
-// ── Fixtures ──────────────────────────────────────────────────────────────────
-
-class SimpleService
-{
-}
-
-class ServiceWithDep
-{
-    public function __construct(public readonly SimpleService $dep)
-    {
-    }
-}
+use Ironflow\Tests\Unit\Fixtures\ServiceWithDep;
+use Ironflow\Tests\Unit\Fixtures\SimpleService;
+use stdClass;
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 

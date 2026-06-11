@@ -142,7 +142,7 @@ class Handler
             $frameFile = $frame['file'] ?? null;
             $frameLine = (int) ($frame['line'] ?? 0);
             $fn        = htmlspecialchars(
-                ($frame['class'] ?? '') . ($frame['type'] ?? '') . ($frame['function'] ?? ''),
+                ($frame['class'] ?? '') . ($frame['type'] ?? '') . $frame['function'],
                 ENT_QUOTES | ENT_SUBSTITUTE
             );
             $shortFile = $frameFile ? $this->shortenPath($frameFile) : '[internal]';

@@ -19,6 +19,12 @@ use Symfony\Component\HttpFoundation\Response;
  */
 abstract class TestCase extends PhpUnitTestCase
 {
+    // Properties populated via $this->x = ... in Pest beforeEach() closures.
+    public mixed $container;
+    public mixed $dispatcher;
+    public mixed $router;
+    public mixed $conn;
+
     // ── HTTP helpers ─────────────────────────────────────────────────
 
     public function get(string $uri, array $headers = []): Response
@@ -67,12 +73,6 @@ abstract class TestCase extends PhpUnitTestCase
         if ($to !== null) {
             $this->assertSame($to, $response->headers->get('Location'));
         }
-    }
-
-    public function assertJson(Response $response, array $expected): void
-    {
-        $decoded = json_decode((string) $response->getContent(), true);
-        $this->assertSame($expected, $decoded);
     }
 
     // ── Dispatcher ───────────────────────────────────────────────────

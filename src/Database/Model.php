@@ -252,7 +252,7 @@ abstract class Model
 
     // ─────────────────────── Dirty tracking ──────────────────────────
 
-    public function isDirty(string $key = null): bool
+    public function isDirty(?string $key = null): bool
     {
         if ($key !== null) {
             return ($this->attributes[$key] ?? null) !== ($this->original[$key] ?? null);
@@ -271,7 +271,7 @@ abstract class Model
         return $changes;
     }
 
-    public function getOriginal(string $key = null): mixed
+    public function getOriginal(?string $key = null): mixed
     {
         if ($key !== null) {
             return $this->original[$key] ?? null;

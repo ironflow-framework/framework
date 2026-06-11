@@ -32,10 +32,7 @@ class Migrator
         $ran = [];
 
         foreach ($pending as $file) {
-            $class = $this->classFromFile($file);
-            require_once $file;
-
-            $migration = new $class();
+            $migration = $this->resolveMigration($file);
             $t0 = hrtime(true);
             $migration->up();
             $ms = (int) round((hrtime(true) - $t0) / 1_000_000);
@@ -72,10 +69,7 @@ class Migrator
                 continue;
             }
 
-            $class = $this->classFromFile($file);
-            require_once $file;
-
-            $migration = new $class();
+            $migration = $this->resolveMigration($file);
             $t0 = hrtime(true);
             $migration->down();
             $ms = (int) round((hrtime(true) - $t0) / 1_000_000);
@@ -110,19 +104,52 @@ class Migrator
         return $status;
     }
 
-    public function fresh(string $path): array
+    public function dropAll(): void
     {
-        // Drop all tables then re-run migrations
-        $sm = $this->db->getSchemaManager();
+        $sm     = $this->db->getSchemaManager();
         $tables = $sm->listTableNames();
         foreach (array_reverse($tables) as $table) {
-            if ($table === 'migrations')
+            if ($table === 'migrations') {
                 continue;
+            }
             Schema::drop($table);
         }
         $this->db->statement('DELETE FROM migrations');
+    }
 
+    public function fresh(string $path): array
+    {
+        $this->dropAll();
         return $this->run($path);
+    }
+
+    /**
+     * Discover all migration directories under a base path.
+     * Checks: {base}/database/migrations, {base}/modules/*\/Database/Migrations, {base}/modules/*\/Migrations
+     *
+     * @return string[]
+     */
+    public static function discoverPaths(string $basePath): array
+    {
+        $paths = [];
+
+        $global = rtrim($basePath, '/\\') . DIRECTORY_SEPARATOR . 'database' . DIRECTORY_SEPARATOR . 'migrations';
+        if (is_dir($global)) {
+            $paths[] = $global;
+        }
+
+        $modulesPath = rtrim($basePath, '/\\') . DIRECTORY_SEPARATOR . 'modules';
+        if (is_dir($modulesPath)) {
+            foreach (['/*/Database/Migrations', '/*/Migrations'] as $pattern) {
+                foreach (glob($modulesPath . $pattern) ?: [] as $dir) {
+                    if (!in_array($dir, $paths, true)) {
+                        $paths[] = $dir;
+                    }
+                }
+            }
+        }
+
+        return $paths;
     }
 
     private function getPendingMigrations(string $path): array
@@ -140,6 +167,40 @@ class Migrator
         $files = glob($path . '/*.php') ?: [];
         sort($files);
         return $files;
+    }
+
+    /**
+     * Resolve a Migration instance from a file.
+     *
+     * Supports two patterns:
+     *   1. Anonymous class  — file ends with `return new class extends Migration { ... };`
+     *   2. Named class      — file defines class CreateXxxTable extends Migration
+     */
+    private function resolveMigration(string $file): Migration
+    {
+        $contents = (string) file_get_contents($file);
+
+        if (preg_match('/return\s+new\s+class\b/i', $contents)) {
+            $instance = require $file;
+            if ($instance instanceof Migration) {
+                return $instance;
+            }
+            throw new \RuntimeException(
+                "Migration file [{$file}] uses anonymous-class syntax but did not return a Migration instance."
+            );
+        }
+
+        require_once $file;
+        $class = $this->classFromFile($file);
+
+        if (!class_exists($class)) {
+            throw new \RuntimeException(
+                "Migration class [{$class}] not found after requiring [{$file}]. "
+                . "The class name must match the file name, or use the `return new class` pattern."
+            );
+        }
+
+        return new $class();
     }
 
     private function classFromFile(string $file): string
