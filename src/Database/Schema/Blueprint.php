@@ -16,6 +16,7 @@ class Blueprint
     private array $columns = [];
     private array $indices = [];
     private array $foreigns = [];
+    private array $drops = [];
 
     public function __construct(private readonly string $tableName)
     {
@@ -98,6 +99,13 @@ class Blueprint
         return $def;
     }
 
+    public function timestamp(string $name): ColumnDefinition
+    {
+        $def = new ColumnDefinition($this, $name, 'timestamp', ['notnull' => true]);
+        $this->columns[] = $def;
+        return $def;
+    }
+
     public function datetime(string $name): ColumnDefinition
     {
         $def = new ColumnDefinition($this, $name, Types::DATETIME_MUTABLE, ['notnull' => true]);
@@ -139,6 +147,14 @@ class Blueprint
         return $def;
     }
 
+    public function dropColumn(array|string $columns): static
+    {
+        foreach ((array) $columns as $col) {
+            $this->drops[] = $col;
+        }
+        return $this;
+    }
+
     // ─────────────────────── Indices ─────────────────────────────────
 
     public function primary(string|array $columns): static
@@ -172,20 +188,9 @@ class Blueprint
 
     // ─────────────────────── Build ────────────────────────────────────
 
-    public function getColumns(): array
-    {
-        return $this->columns;
-    }
-    public function getIndices(): array
-    {
-        return $this->indices;
-    }
-    public function getForeigns(): array
-    {
-        return $this->foreigns;
-    }
-    public function getTableName(): string
-    {
-        return $this->tableName;
-    }
+    public function getColumns(): array { return $this->columns; }
+    public function getIndices(): array { return $this->indices; }
+    public function getForeigns(): array { return $this->foreigns; }
+    public function getDrops(): array { return $this->drops; }
+    public function getTableName(): string { return $this->tableName; }
 }

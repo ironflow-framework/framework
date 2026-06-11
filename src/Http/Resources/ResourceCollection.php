@@ -27,6 +27,16 @@ final class ResourceCollection
     ) {
     }
 
+    public function toArray(Request $request): array
+    {
+        $data = [];
+        foreach ($this->resources as $item) {
+            $resource = new $this->resourceClass($item);
+            $data[]   = $resource->toArray($request);
+        }
+        return $data;
+    }
+
     public function toResponse(Request $request): Response
     {
         $data = [];

@@ -20,16 +20,11 @@ class MigrateRollbackCommand extends Command
 
     protected function handle(): int
     {
-        $path     = $this->option('path') ?? base_path('modules');
-        $migrator = new Migrator($this->db);
-
-        $paths = [];
-        foreach (glob($path . '/*/Database/Migrations') ?: [] as $p) {
-            $paths[] = $p;
-        }
-        if (empty($paths)) {
-            $paths[] = $path;
-        }
+        $migrator   = new Migrator($this->db);
+        $explicitPath = $this->option('path');
+        $paths      = $explicitPath !== null && is_dir((string) $explicitPath)
+            ? [(string) $explicitPath]
+            : Migrator::discoverPaths(base_path());
 
         $rolledBack = [];
         foreach ($paths as $p) {

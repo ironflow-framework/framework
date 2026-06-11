@@ -10,7 +10,7 @@ use Ironflow\Database\Migrations\Migrator;
 
 class MigrateCommand extends Command
 {
-    protected string $signature = 'migrate {--path=}';
+    protected string $signature   = 'migrate {--path=} {--fresh} {--seed} {--rollback}';
     protected string $description = 'Run pending database migrations';
 
     public function __construct(private readonly Connection $db)
@@ -20,14 +20,63 @@ class MigrateCommand extends Command
 
     protected function handle(): int
     {
-        $path = $this->option('path') ?? base_path('database/migrations');
+        $migrator = new Migrator($this->db);
 
-        if (!is_dir($path)) {
-            $this->runAllModuleMigrations();
-            return self::SUCCESS;
+        if ($this->option('rollback')) {
+            return $this->runRollback($migrator);
         }
 
-        $migrator = new Migrator($this->db);
+        $explicitPath = $this->option('path');
+
+        if ($explicitPath !== null) {
+            return $this->runPath($migrator, (string) $explicitPath);
+        }
+
+        return $this->runAll($migrator);
+    }
+
+    private function runAll(Migrator $migrator): int
+    {
+        if ($this->option('fresh')) {
+            $this->freshAll($migrator);
+        }
+
+        $paths   = $this->resolveMigrationPaths();
+        $any     = false;
+
+        foreach ($paths as $path) {
+            $ran = $migrator->run($path);
+            if (!empty($ran)) {
+                if (!$any) {
+                    $this->newLine();
+                    $any = true;
+                }
+                foreach ($ran as $item) {
+                    $this->migrationLine($item['file'], $item['ms']);
+                }
+            }
+        }
+
+        if (!$any) {
+            $this->info('Nothing to migrate.');
+        } else {
+            $this->newLine();
+        }
+
+        if ($this->option('seed')) {
+            $this->call('db:seed');
+        }
+
+        return self::SUCCESS;
+    }
+
+    private function runPath(Migrator $migrator, string $path): int
+    {
+        if (!is_dir($path)) {
+            $this->error("Migration path [{$path}] does not exist.");
+            return self::FAILURE;
+        }
+
         $ran = $migrator->run($path);
 
         if (empty($ran)) {
@@ -43,32 +92,46 @@ class MigrateCommand extends Command
         return self::SUCCESS;
     }
 
-    private function runAllModuleMigrations(): void
+    private function runRollback(Migrator $migrator): int
     {
-        $migrator    = new Migrator($this->db);
-        $modulesPath = base_path('modules');
+        $paths = $this->resolveMigrationPaths();
+        $any   = false;
 
-        if (!is_dir($modulesPath)) {
-            $this->warn('No migrations directory found.');
-            return;
-        }
-
-        $any = false;
-        foreach (glob($modulesPath . '/*/Database/Migrations') ?: [] as $path) {
-            $ran = $migrator->run($path);
-            if (!empty($ran) && !$any) {
-                $this->newLine();
-                $any = true;
-            }
-            foreach ($ran as $item) {
-                $this->migrationLine($item['file'], $item['ms']);
+        foreach ($paths as $path) {
+            $rolled = $migrator->rollback($path);
+            if (!empty($rolled)) {
+                if (!$any) {
+                    $this->newLine();
+                    $any = true;
+                }
+                foreach ($rolled as $item) {
+                    $this->output->writeln(
+                        "  <fg=yellow>ROLLBACK</>  {$item['file']} <fg=gray>({$item['ms']}ms)</>"
+                    );
+                }
             }
         }
 
-        if ($any) {
-            $this->newLine();
+        if (!$any) {
+            $this->info('Nothing to roll back.');
         } else {
-            $this->info('Nothing to migrate.');
+            $this->newLine();
         }
+
+        return self::SUCCESS;
+    }
+
+    private function freshAll(Migrator $migrator): void
+    {
+        $this->warn('Dropping all tables and re-running all migrations...');
+        foreach ($this->resolveMigrationPaths() as $path) {
+            $migrator->fresh($path);
+        }
+    }
+
+    /** @return string[] */
+    private function resolveMigrationPaths(): array
+    {
+        return Migrator::discoverPaths(base_path());
     }
 }

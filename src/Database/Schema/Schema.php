@@ -88,7 +88,7 @@ class Schema
         $dialect   = self::dialect($platform);
         $q         = self::q($dialect);
 
-        // ── ALTER: add columns only ───────────────────────────────────
+        // ── ALTER: add / drop columns ─────────────────────────────────
         if ($alter && $sm->tablesExist([$tableName])) {
             foreach ($blueprint->getColumns() as $col) {
                 if ($col instanceof ColumnDefinition) {
@@ -96,6 +96,9 @@ class Schema
                         self::buildAddColumnSql($tableName, $col->name, $col->type, $col->getOptions(), $dialect)
                     );
                 }
+            }
+            foreach ($blueprint->getDrops() as $dropCol) {
+                $conn->statement("ALTER TABLE {$q}{$tableName}{$q} DROP COLUMN {$q}{$dropCol}{$q}");
             }
             return;
         }
@@ -259,6 +262,11 @@ class Schema
                 'pgsql'   => 'JSONB',
                 default   => 'JSON',
             },
+            'timestamp' => match ($dialect) {
+                'sqlite'  => 'TEXT',
+                'pgsql'   => 'TIMESTAMPTZ',
+                default   => 'TIMESTAMP',
+            },
             'datetime_mutable', 'datetime' => match ($dialect) {
                 'sqlite'  => 'TEXT',
                 'pgsql'   => 'TIMESTAMP',
@@ -286,17 +294,26 @@ class Schema
         $nullable = !($opts['notnull'] ?? true);
         $null     = $nullable ? 'NULL' : 'NOT NULL';
 
-        // PostgreSQL uses ADD COLUMN; others too, but without the redundant COLUMN keyword
-        // it still works everywhere
-        return "ALTER TABLE {$q}{$table}{$q} ADD COLUMN {$q}{$col}{$q} {$typeSql} {$null}";
+        $sql = "ALTER TABLE {$q}{$table}{$q} ADD COLUMN {$q}{$col}{$q} {$typeSql} {$null}";
+
+        if (array_key_exists('default', $opts)) {
+            $sql .= ' DEFAULT ' . self::quoteDefault($opts['default']);
+        }
+
+        if ($dialect === 'mysql' && isset($opts['after'])) {
+            $sql .= " AFTER {$q}{$opts['after']}{$q}";
+        }
+
+        return $sql;
     }
 
     // ── Default value quoting ────────────────────────────────────────
 
     private static function quoteDefault(mixed $value): string
     {
-        if ($value === null)                   return 'NULL';
-        if (is_bool($value))                   return $value ? '1' : '0';
+        if ($value === null)                    return 'NULL';
+        if ($value === 'CURRENT_TIMESTAMP')     return 'CURRENT_TIMESTAMP';
+        if (is_bool($value))                    return $value ? '1' : '0';
         if (is_int($value) || is_float($value)) return (string) $value;
         return "'" . addslashes((string) $value) . "'";
     }

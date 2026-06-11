@@ -36,8 +36,15 @@ class {$name} extends Factory
 {
     public function definition(): array
     {
+        \$fake = \$this->fake();
+
         return [
-            // 'title' => \$this->fake()->sentence(),
+            // 'name'       => \$fake->name(),
+            // 'email'      => \$fake->email(),
+            // 'title'      => \$fake->sentence(),
+            // 'body'       => \$fake->paragraph(),
+            // 'published'  => \$fake->boolean(),
+            // 'created_at' => \$fake->dateTimeBetween('-1 year'),
         ];
     }
 }

@@ -2,18 +2,12 @@
 
 declare(strict_types=1);
 
+namespace Ironflow\Tests\Unit;
+
 use Ironflow\Database\Connection;
 use Ironflow\Database\Model;
-
-// ── Fixture ───────────────────────────────────────────────────────────────────
-
-class ArticleModel extends Model
-{
-    protected string $table    = 'articles';
-    protected array  $fillable = ['title', 'body', 'published'];
-    protected array  $casts    = ['published' => 'bool'];
-    protected array  $hidden   = ['body'];
-}
+use Ironflow\Tests\Unit\Fixtures\ArticleModel;
+use RuntimeException;
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 

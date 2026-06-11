@@ -98,7 +98,7 @@ class Permission
         );
     }
 
-    /** @return static[] grouped by their `group` field */
+    /** @return array<string, list<static>> */
     public static function grouped(): array
     {
         $grouped = [];

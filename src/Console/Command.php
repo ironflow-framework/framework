@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Ironflow\Console;
 
 use Symfony\Component\Console\Command\Command as SymfonyCommand;
+use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -203,6 +204,23 @@ abstract class Command extends SymfonyCommand
     protected function table(array $headers, array $rows): void
     {
         $this->io->table($headers, $rows);
+    }
+
+    /**
+     * Call another registered console command by name.
+     *
+     * @param array<string, mixed> $arguments  Extra arguments/options to pass
+     */
+    protected function call(string $command, array $arguments = []): int
+    {
+        $application = $this->getApplication();
+        if ($application === null) {
+            $this->error("Cannot call [{$command}]: no application context.");
+            return self::FAILURE;
+        }
+        $input = new ArrayInput(array_merge(['command' => $command], $arguments));
+        $input->setInteractive(false);
+        return $application->find($command)->run($input, $this->output);
     }
 
     // ── Signature parsing ────────────────────────────────────────────

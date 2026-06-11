@@ -56,6 +56,21 @@ class ColumnDefinition
         return $this;
     }
 
+    /** Set DEFAULT CURRENT_TIMESTAMP (no quoting applied). */
+    public function useCurrent(): static
+    {
+        $this->options['default']     = 'CURRENT_TIMESTAMP';
+        $this->options['use_current'] = true;
+        return $this;
+    }
+
+    /** MySQL AFTER <column> clause when adding a column (silently ignored on other dialects). */
+    public function after(string $column): static
+    {
+        $this->options['after'] = $column;
+        return $this;
+    }
+
     public function getOptions(): array
     {
         return $this->options;

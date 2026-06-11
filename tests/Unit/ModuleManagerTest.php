@@ -2,29 +2,16 @@
 
 declare(strict_types=1);
 
+namespace Ironflow\Tests\Unit;
+
 use Ironflow\Container;
 use Ironflow\Exceptions\ModuleException;
-use Ironflow\Module\Attributes\Module;
-use Ironflow\Module\BaseModule;
 use Ironflow\Module\ModuleManager;
-
-// ── Fixtures ──────────────────────────────────────────────────────────────────
-
-#[Module(name: 'alpha', imports: [], providers: [], exports: [])]
-class AlphaModule extends BaseModule {}
-
-#[Module(name: 'beta', imports: [AlphaModule::class], providers: [], exports: [])]
-class BetaModule extends BaseModule {}
-
-#[Module(name: 'gamma', imports: [BetaModule::class], providers: [], exports: [])]
-class GammaModule extends BaseModule {}
-
-// Cycle pair: epsilon → delta → epsilon
-#[Module(name: 'epsilon', imports: [DeltaModule::class], providers: [], exports: [])]
-class EpsilonModule extends BaseModule {}
-
-#[Module(name: 'delta', imports: [EpsilonModule::class], providers: [], exports: [])]
-class DeltaModule extends BaseModule {}
+use Ironflow\Tests\Unit\Fixtures\AlphaModule;
+use Ironflow\Tests\Unit\Fixtures\BetaModule;
+use Ironflow\Tests\Unit\Fixtures\DeltaModule;
+use Ironflow\Tests\Unit\Fixtures\EpsilonModule;
+use Ironflow\Tests\Unit\Fixtures\GammaModule;
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 

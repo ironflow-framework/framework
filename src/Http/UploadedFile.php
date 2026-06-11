@@ -95,7 +95,7 @@ class UploadedFile extends SymfonyUploadedFile
      */
     public function isValid(): bool
     {
-        return $this->isOk() && $this->isFile();
+        return parent::isValid() && $this->isFile();
     }
 
     /**
