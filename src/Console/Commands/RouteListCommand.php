@@ -9,7 +9,7 @@ use Ironflow\Routing\Router;
 
 class RouteListCommand extends Command
 {
-    protected string $signature = 'route:list';
+    protected string $signature   = 'route:list';
     protected string $description = 'List all registered routes';
 
     public function __construct(private readonly Router $router)
@@ -19,26 +19,62 @@ class RouteListCommand extends Command
 
     protected function handle(): int
     {
-        $rows = [];
+        $routes = [];
 
-        foreach ($this->router->getRoutes()->all() as $method => $routes) {
-            foreach ($routes as $route) {
+        foreach ($this->router->getRoutes()->all() as $method => $methodRoutes) {
+            foreach ($methodRoutes as $route) {
                 $action = $route->getAction();
                 $action = is_array($action)
                     ? implode('@', [class_basename($action[0]), $action[1]])
                     : (is_callable($action) ? 'Closure' : (string) $action);
 
-                $rows[] = [
-                    $method,
-                    $route->getUri(),
-                    $route->getName() ?? '',
-                    $action,
-                    implode(', ', $route->getMiddlewares()),
+                $routes[] = [
+                    'method'     => strtoupper($method),
+                    'uri'        => $route->getUri(),
+                    'name'       => $route->getName() ?? '',
+                    'action'     => $action,
+                    'middleware' => implode(', ', $route->getMiddlewares()),
                 ];
             }
         }
 
-        $this->table(['Method', 'URI', 'Name', 'Action', 'Middlewares'], $rows);
+        if (empty($routes)) {
+            $this->info('No routes registered.');
+            return self::SUCCESS;
+        }
+
+        $this->newLine();
+
+        foreach ($routes as $r) {
+            $methodBadge = $this->methodBadge($r['method']);
+            $uri         = mb_strimwidth($r['uri'], 0, 40, '…');
+            $name        = mb_strimwidth($r['name'], 0, 28, '…');
+            $action      = mb_strimwidth($r['action'], 0, 38, '…');
+
+            $uriPad    = str_pad($uri, 40);
+            $namePad   = str_pad($name, 28);
+
+            $this->output->writeln(
+                "   {$methodBadge}  {$uriPad}  <fg=gray>{$namePad}</>  {$action}"
+            );
+        }
+
+        $this->newLine();
+
         return self::SUCCESS;
+    }
+
+    private function methodBadge(string $method): string
+    {
+        $padded = str_pad($method, 7);
+
+        return match ($method) {
+            'GET'     => "<options=bold;fg=cyan>{$padded}</>",
+            'POST'    => "<options=bold;fg=green>{$padded}</>",
+            'PUT',
+            'PATCH'   => "<options=bold;fg=yellow>{$padded}</>",
+            'DELETE'  => "<options=bold;fg=red>{$padded}</>",
+            default   => "<fg=gray>{$padded}</>",
+        };
     }
 }

@@ -76,6 +76,7 @@ class Kernel
             Commands\UpCommand::class,
             Commands\AboutCommand::class,
             Commands\TinkerCommand::class,
+            Commands\MakePolicyCommand::class,
         ];
 
         foreach ($commands as $class) {

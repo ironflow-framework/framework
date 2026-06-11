@@ -20,10 +20,9 @@ class MigrateRollbackCommand extends Command
 
     protected function handle(): int
     {
-        $path = $this->option('path') ?? base_path('modules');
+        $path     = $this->option('path') ?? base_path('modules');
         $migrator = new Migrator($this->db);
 
-        // Collect all migration paths
         $paths = [];
         foreach (glob($path . '/*/Database/Migrations') ?: [] as $p) {
             $paths[] = $p;
@@ -40,9 +39,11 @@ class MigrateRollbackCommand extends Command
         if (empty($rolledBack)) {
             $this->info('Nothing to rollback.');
         } else {
-            foreach ($rolledBack as $m) {
-                $this->warn("Rolled back: {$m}");
+            $this->newLine();
+            foreach ($rolledBack as $item) {
+                $this->migrationLine($item['file'], $item['ms'], rollback: true);
             }
+            $this->newLine();
         }
 
         return self::SUCCESS;

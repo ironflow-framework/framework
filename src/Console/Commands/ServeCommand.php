@@ -5,42 +5,31 @@ declare(strict_types=1);
 namespace Ironflow\Console\Commands;
 
 use Ironflow\Console\Command;
+use Symfony\Component\Process\Process;
 
 /**
- * Development server with auto-restart, colored request logging,
- * optional CSS watcher, and automatic port increment.
+ * Development HTTP server.
+ *
+ * Uses Symfony\Component\Process (cross-platform, works on Windows)
+ * instead of raw proc_open + stream_select, following the same approach
+ * as Laravel's artisan serve.
  *
  * Output format:
- *   [12:00:00]  GET      200    12ms  /
- *   [12:00:00]  POST     302     4ms  /login
- *   [12:00:00]  GET      404     2ms  /missing
+ *   INFO  Server running on [http://localhost:8080].
+ *
+ *   2024-01-15 12:00:00   GET   /                200    12ms
+ *   2024-01-15 12:00:01   POST  /login           302     4ms
+ *   2024-01-15 12:00:02   GET   /missing         404     2ms
  */
 class ServeCommand extends Command
 {
     protected string $signature   = 'serve {--host=localhost} {--port=8080} {--watch-css}';
-    protected string $description = 'Start the development server with live request logging and auto-restart';
+    protected string $description = 'Start the development server';
 
-    // ── ANSI colour constants ────────────────────────────────────────
-    private const RESET    = "\033[0m";
-    private const BOLD     = "\033[1m";
-    private const DIM      = "\033[2m";
-    private const INDIGO   = "\033[38;5;105m";
-    private const CYAN     = "\033[38;5;45m";
-    private const GREEN    = "\033[38;5;82m";
-    private const YELLOW   = "\033[38;5;220m";
-    private const RED      = "\033[38;5;196m";
-    private const GREY     = "\033[38;5;244m";
-    private const WHITE    = "\033[38;5;255m";
-    private const ORANGE   = "\033[38;5;208m";
-    private const BG_INDIGO = "\033[48;5;57m";
-    private const BG_CYAN   = "\033[48;5;31m";
-    private const BG_YELLOW = "\033[48;5;136m";
-    private const BG_RED    = "\033[48;5;88m";
-    private const BG_GREY   = "\033[48;5;238m";
-
-    private bool $running = true;
     /** @var resource|null */
     private $cssProcess = null;
+
+    // ── Entry point ───────────────────────────────────────────────────
 
     protected function handle(): int
     {
@@ -50,100 +39,293 @@ class ServeCommand extends Command
         $root     = base_path('public');
         $router   = base_path('bin/server.php');
 
-        // Auto-increment port if already in use
         $port = $this->findFreePort($host, $port);
+        $url  = "http://{$host}:{$port}";
 
-        $this->setupSignalHandlers();
+        $this->printBanner($url, $watchCss);
 
         if ($watchCss) {
             $this->startCssWatcher();
         }
 
         $attempt = 0;
-        $url     = "http://{$host}:{$port}";
-        $this->printBanner($url, $root, $watchCss);
 
-        while ($this->running) {
-            $crashed = $this->startServer($host, (string) $port, $root, $router);
+        while (true) {
+            $exitCode = $this->runServer($host, $port, $root, $router);
 
-            if (!$this->running) {
-                break; // clean Ctrl+C shutdown
+            // null = process failed to start; 0 = clean exit (Ctrl+C)
+            if ($exitCode === null || $exitCode === 0) {
+                break;
             }
 
-            // Server crashed unexpectedly
+            // Non-zero → crash: restart with exponential back-off
             $attempt++;
-            $delay = min(10, 2 ** min($attempt - 1, 3)); // 1 → 2 → 4 → 8 → 10 s
-            echo PHP_EOL
-                . self::RED . self::BOLD . '  ✖ Server crashed'
-                . self::RESET . self::GREY . " (exit code {$crashed})"
-                . self::RESET . PHP_EOL;
-            echo self::YELLOW
-                . "  ↻ Restarting in {$delay}s… (attempt #{$attempt})"
-                . self::RESET . PHP_EOL . PHP_EOL;
+            $delay = min(10, 2 ** min($attempt - 1, 3)); // 1→2→4→8→10 s
 
-            for ($i = 0; $i < $delay; $i++) {
-                sleep(1);
-            }
+            $this->output->writeln('');
+            $this->output->writeln(sprintf(
+                '   <fg=red;options=bold>ERROR</>  Server crashed (exit %d). Restarting in %ds… (attempt #%d)',
+                $exitCode,
+                $delay,
+                $attempt
+            ));
+
+            sleep($delay);
         }
 
         $this->stopCssWatcher();
 
-        echo PHP_EOL . self::DIM . '  Server stopped.' . self::RESET . PHP_EOL;
+        $this->output->writeln('');
+        $this->output->writeln('   <fg=gray>Server stopped.</>');
         return self::SUCCESS;
     }
 
-    // ── Signal handling ──────────────────────────────────────────────
+    // ── Server process ────────────────────────────────────────────────
 
-    private function setupSignalHandlers(): void
+    /**
+     * Spin up the PHP built-in server and stream its output until it exits.
+     * Returns the exit code, or null if the process could not start.
+     */
+    private function runServer(string $host, int $port, string $root, string $router): ?int
     {
-        if (!function_exists('pcntl_signal')) {
+        // Build the command array (no shell quoting issues cross-platform)
+        $cmd = ['php', '-S', "{$host}:{$port}", '-t', $root];
+        if (file_exists($router)) {
+            $cmd[] = $router;
+        }
+
+        $process = new Process($cmd);
+        $process->setTimeout(null);   // run until killed
+        $process->setIdleTimeout(null);
+
+        $pending = [];   // ip:port → microtime() for request timing
+        $buffer  = '';   // incomplete last line
+
+        try {
+            $process->start();
+        } catch (\Throwable $e) {
+            $this->output->writeln("   <fg=red>ERROR</>  Could not start PHP: {$e->getMessage()}");
+            return 1;
+        }
+
+        while ($process->isRunning()) {
+            // PHP built-in server writes to stderr; collect both just in case
+            $chunk = $process->getIncrementalOutput()
+                   . $process->getIncrementalErrorOutput();
+
+            if ($chunk !== '') {
+                $buffer .= $chunk;
+
+                // Process complete lines
+                while (($pos = strpos($buffer, "\n")) !== false) {
+                    $line   = rtrim(substr($buffer, 0, $pos), "\r\n");
+                    $buffer = substr($buffer, $pos + 1);
+                    if ($line !== '') {
+                        $this->parseLine($line, $pending);
+                    }
+                }
+            }
+
+            usleep(50_000); // 50 ms poll — keeps CPU idle, output latency < 50 ms
+        }
+
+        // Flush any partial line left in the buffer
+        if (trim($buffer) !== '') {
+            $this->parseLine(rtrim($buffer, "\r\n"), $pending);
+        }
+
+        return $process->getExitCode();
+    }
+
+    // ── Output parser ─────────────────────────────────────────────────
+
+    /** @param array<string,float|true> $pending */
+    private function parseLine(string $line, array &$pending): void
+    {
+        // Strip PHP's [timestamp] prefix (works for both PHP server and Monolog formats)
+        $clean = preg_replace('/^\[.*?\]\s*/', '', $line) ?? $line;
+
+        // ── RequestLogger Monolog line ────────────────────────────────
+        // Format after timestamp strip: "Channel.LEVEL: METHOD /uri → STATUS (TIMEms)"
+        // On Windows, Ctrl+C may kill the server before PHP writes its own [STATUS]: GET /
+        // line, so this Monolog line is often the only source of request information.
+        if (preg_match(
+            '/^\w+\.\w+:\s+(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\s+(\S+)\s+→\s+(\d+)\s+\((\d+)ms\)/',
+            $clean,
+            $m
+        )) {
+            $dispPath = strtok($m[2], '?') ?: $m[2];
+            $this->printRequest($m[1], (int) $m[3], (int) $m[4], $dispPath);
+            // Mark so the duplicate PHP-server log line for the same request is skipped
+            $pending["__ml:{$m[1]}:{$m[2]}"] = true;
             return;
         }
 
-        pcntl_async_signals(true);
+        // ── Suppress all other Monolog-formatted lines ────────────────
+        // Pattern: "ChannelName.LEVEL: …" — application-level logs that should
+        // go to the log file, not to the serve output.
+        if (preg_match('/^\w+\.\w+:\s/', $clean)) {
+            return;
+        }
 
-        $stop = function () {
-            $this->running = false;
-        };
+        // ── Request completed: "ip:port [status]: METHOD /uri" ────────
+        if (preg_match(
+            '/^(\[?[\da-fA-F:.]+\]?):(\d+)\s+\[(\d+)\]:\s+(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\s+(.+)$/',
+            $clean,
+            $m
+        )) {
+            [, $ip, $cport, $status, $method, $rawUri] = $m;
+            $rawUri = trim($rawUri);
 
-        pcntl_signal(SIGTERM, $stop);
-        pcntl_signal(SIGINT,  $stop);
-        pcntl_signal(SIGHUP,  $stop);
+            // Skip if already displayed via Monolog RequestLogger line
+            $markerKey = "__ml:{$method}:{$rawUri}";
+            if (isset($pending[$markerKey])) {
+                unset($pending[$markerKey], $pending["{$ip}:{$cport}"]);
+                return;
+            }
+
+            $key   = "{$ip}:{$cport}";
+            $start = is_float($pending[$key] ?? null) ? (float) $pending[$key] : microtime(true);
+            unset($pending[$key]);
+            $ms   = (int) round((microtime(true) - $start) * 1000);
+            $path = strtok($rawUri, '?') ?: $rawUri;
+            $this->printRequest($method, (int) $status, $ms, $path);
+            return;
+        }
+
+        // ── Request accepted — record timing start ────────────────────
+        if (preg_match('/^(\[?[\da-fA-F:.]+\]?):(\d+)\s+Accepted$/', $clean, $m)) {
+            $pending["{$m[1]}:{$m[2]}"] = microtime(true);
+            return;
+        }
+
+        // ── Ignore closing noise ──────────────────────────────────────
+        if (str_contains($clean, 'Closing')) {
+            return;
+        }
+
+        // ── PHP fatal / parse errors ──────────────────────────────────
+        if (str_contains($line, 'PHP Fatal') || str_contains($line, 'PHP Parse error')) {
+            $this->output->writeln("   <fg=red;options=bold>[PHP]</>  {$clean}");
+            return;
+        }
+
+        // ── Port conflict ─────────────────────────────────────────────
+        if (str_contains($line, 'already in use') || str_contains($line, 'Address already in use')) {
+            $this->output->writeln('   <fg=red;options=bold>ERROR</>  Address already in use — try <options=bold>--port=XXXX</>.');
+            return;
+        }
+
+        // ── Server start-up lines — already shown in banner ──────────
+        if (str_contains($line, 'Development Server') || str_contains($line, 'Listening on')) {
+            return;
+        }
+
+        // ── Everything else — dim passthrough ────────────────────────
+        if (trim($clean) !== '') {
+            $this->output->writeln("   <fg=gray>{$clean}</>");
+        }
     }
 
-    // ── Port finder ──────────────────────────────────────────────────
+    // ── Request line ──────────────────────────────────────────────────
+
+    private function printRequest(string $method, int $status, int $ms, string $uri): void
+    {
+        $timestamp = date('Y-m-d H:i:s');
+
+        // Method colour
+        $methodTag = match ($method) {
+            'GET'          => 'fg=cyan',
+            'POST'         => 'fg=green',
+            'PUT', 'PATCH' => 'fg=yellow',
+            'DELETE'       => 'fg=red',
+            default        => 'fg=white',
+        };
+
+        // Status colour
+        $statusTag = match (true) {
+            $status >= 500 => 'fg=red;options=bold',
+            $status >= 400 => 'fg=yellow',
+            $status >= 300 => 'fg=cyan',
+            default        => 'fg=green',
+        };
+
+        // Response time colour
+        $timeTag = match (true) {
+            $ms < 50  => 'fg=green',
+            $ms < 200 => 'fg=yellow',
+            default   => 'fg=red',
+        };
+
+        // Fixed-width columns for clean alignment
+        $methodPad = str_pad($method, 7);
+        $uriPad    = mb_strimwidth($uri, 0, 50, '…');
+        $statusPad = str_pad((string) $status, 3);
+        $timePad   = str_pad("{$ms}ms", 8, ' ', STR_PAD_LEFT);
+
+        // Dot-padding between URI and status (Laravel style)
+        $dots = str_repeat('.', max(2, 52 - mb_strlen($uriPad)));
+
+        $this->output->writeln(sprintf(
+            '  <fg=gray>%s</>  <options=bold;%s>%s</>  %s <fg=gray>%s</>  <%s>%s</>  <%s>%s</>',
+            $timestamp,
+            $methodTag,
+            $methodPad,
+            $uriPad,
+            $dots,
+            $statusTag,
+            $statusPad,
+            $timeTag,
+            $timePad
+        ));
+    }
+
+    // ── Banner ────────────────────────────────────────────────────────
+
+    private function printBanner(string $url, bool $watchCss): void
+    {
+        $this->output->writeln('');
+        $this->output->writeln(
+            "   <options=bold;fg=green>INFO</>  Server running on [<options=bold;fg=cyan>{$url}</>]."
+        );
+        $this->output->writeln('');
+        $this->output->writeln('   Press <options=bold>Ctrl+C</> to stop the server');
+        if ($watchCss) {
+            $this->output->writeln('   CSS watcher <options=bold;fg=green>active</> (npm run dev)');
+        }
+        $this->output->writeln('');
+    }
+
+    // ── Port finder ───────────────────────────────────────────────────
 
     private function findFreePort(string $host, int $port): int
     {
         while ($port < 65535) {
             $socket = @fsockopen($host, $port, $errno, $errstr, 0.1);
             if ($socket === false) {
-                return $port; // port is free
+                return $port;
             }
             fclose($socket);
-            echo self::YELLOW . "  Port {$port} is in use, trying " . ($port + 1) . '…' . self::RESET . PHP_EOL;
+            $this->output->writeln(
+                "   <fg=yellow>Port {$port} is in use — trying " . ($port + 1) . '…</>'
+            );
             $port++;
         }
         return $port;
     }
 
-    // ── CSS watcher ──────────────────────────────────────────────────
+    // ── CSS watcher ───────────────────────────────────────────────────
 
     private function startCssWatcher(): void
     {
-        $skeletonRoot = dirname(base_path()); // project root (skeleton/)
-        if (!file_exists("{$skeletonRoot}/package.json")) {
-            echo self::YELLOW . '  --watch-css: package.json not found, skipping CSS watcher.' . self::RESET . PHP_EOL;
+        $root = base_path();
+        if (!file_exists("{$root}/package.json")) {
+            $this->output->writeln('   <fg=yellow>--watch-css: no package.json found, skipping.</>');
             return;
         }
-
-        $cmd  = 'npm run dev 2>&1';
-        $desc = [1 => ['pipe', 'w']];
-        $proc = proc_open($cmd, $desc, $pipes, $skeletonRoot);
+        $proc = proc_open('npm run dev 2>&1', [1 => ['pipe', 'w']], $pipes, $root);
         if (is_resource($proc)) {
             $this->cssProcess = $proc;
-            stream_set_blocking($pipes[1], false);
-            echo self::CYAN . '  CSS watcher started (npm run dev).' . self::RESET . PHP_EOL;
         }
     }
 
@@ -154,234 +336,5 @@ class ServeCommand extends Command
             proc_close($this->cssProcess);
             $this->cssProcess = null;
         }
-    }
-
-    // ── Server process ───────────────────────────────────────────────
-
-    /**
-     * Run the PHP built-in server. Returns the exit code when it stops.
-     * Returns 0 on a clean shutdown ($this->running = false), non-zero on crash.
-     *
-     * @phpstan-impure
-     */
-    private function startServer(string $host, string $port, string $root, string $router): int
-    {
-        $cmd = sprintf('php -S %s:%s -t "%s" "%s"', $host, $port, $root, $router);
-
-        $descriptors = [
-            0 => ['pipe', 'r'],
-            1 => ['pipe', 'w'],
-            2 => ['pipe', 'w'],
-        ];
-
-        $process = proc_open($cmd, $descriptors, $pipes);
-
-        if (!is_resource($process)) {
-            $this->error('Failed to start PHP built-in server.');
-            return 1;
-        }
-
-        fclose($pipes[0]);
-        stream_set_blocking($pipes[1], false);
-        stream_set_blocking($pipes[2], false);
-
-        $pending = [];
-
-        while ($this->running) {
-            $read   = [$pipes[1], $pipes[2]];
-            $write  = null;
-            $except = null;
-
-            $changed = stream_select($read, $write, $except, 0, 100_000);
-
-            if ($changed === false) {
-                break;
-            }
-
-            foreach ($read as $stream) {
-                $raw = fgets($stream);
-                if ($raw === false) {
-                    continue;
-                }
-                $raw = rtrim($raw);
-                if ($raw === '') {
-                    continue;
-                }
-                $this->parseLine($raw, $pending);
-            }
-
-            $status = proc_get_status($process);
-            if (!$status['running']) {
-                fclose($pipes[1]);
-                fclose($pipes[2]);
-                $exitCode = $status['exitcode'];
-                proc_close($process);
-                return $exitCode;
-            }
-        }
-
-        // Clean shutdown: terminate the child
-        proc_terminate($process, defined('SIGTERM') ? SIGTERM : 15);
-
-        // Drain remaining output
-        while (($line = fgets($pipes[2])) !== false) {
-            // discard
-        }
-
-        fclose($pipes[1]);
-        fclose($pipes[2]);
-        proc_close($process);
-
-        return 0;
-    }
-
-    // ── Line parser ──────────────────────────────────────────────────
-
-    private function parseLine(string $line, array &$pending): void
-    {
-        $clean = preg_replace('/^\[.*?\]\s*/', '', $line) ?? $line;
-
-        // Request log: "ip:port [status]: METHOD /uri"
-        if (preg_match(
-            '/^(\[?[\da-fA-F:.]+\]?):?(\d+)\s+\[(\d+)\]:\s+(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\s+(.+)$/',
-            $clean,
-            $m
-        )) {
-            [, $ip, $clientPort, $status, $method, $uri] = $m;
-            $key   = "{$ip}:{$clientPort}";
-            $start = $pending[$key] ?? microtime(true);
-            unset($pending[$key]);
-            $ms = (int) round((microtime(true) - $start) * 1000);
-            $path = strtok($uri, '?') ?: $uri;
-            $this->printRequest($method, (int) $status, $ms, $path, $ip);
-            return;
-        }
-
-        // "Accepted" → record start time
-        if (preg_match('/^(\[?[\da-fA-F:.]+\]?):?(\d+)\s+Accepted$/', $clean, $m)) {
-            $pending["{$m[1]}:{$m[2]}"] = microtime(true);
-            return;
-        }
-
-        if (str_contains($clean, 'Closing')) {
-            return;
-        }
-
-        // PHP fatal / parse errors
-        if (str_contains($line, 'PHP Fatal') || str_contains($line, 'PHP Parse error')) {
-            echo self::RED . '  [PHP ERROR] ' . self::RESET . self::DIM . $clean . self::RESET . PHP_EOL;
-            return;
-        }
-
-        // "Address already in use" — port conflict
-        if (str_contains($line, 'Address already in use')) {
-            echo self::RED . '  Address already in use. Use --port=XXXX to specify another port.' . self::RESET . PHP_EOL;
-            $this->running = false;
-            return;
-        }
-
-        // Startup messages
-        if (
-            str_contains($line, 'Development Server') ||
-            str_contains($line, 'started')            ||
-            str_contains($line, 'Listening on')
-        ) {
-            echo self::DIM . self::GREY . '  ' . $clean . self::RESET . PHP_EOL;
-            return;
-        }
-
-        // Dim passthrough
-        echo self::DIM . '  ' . $clean . self::RESET . PHP_EOL;
-    }
-
-    // ── Request line formatter ───────────────────────────────────────
-
-    private function printRequest(
-        string $method,
-        int    $status,
-        int    $ms,
-        string $uri,
-        string $ip
-    ): void {
-        $time   = date('H:i:s');
-        $padUri = mb_strimwidth($uri, 0, 50, '…');
-
-        [$bgMethod] = $this->methodColour($method);
-        $methodBadge = $bgMethod . self::BOLD . self::WHITE
-            . ' ' . str_pad($method, 7) . ' '
-            . self::RESET;
-
-        $statusColour = $this->statusColour($status);
-        $statusStr    = $statusColour . self::BOLD . str_pad((string) $status, 5) . self::RESET;
-
-        $latencyColour = match (true) {
-            $ms < 50  => self::GREEN,
-            $ms < 200 => self::YELLOW,
-            default   => self::RED,
-        };
-        $latencyStr = $latencyColour . str_pad("{$ms}ms", 8, ' ', STR_PAD_LEFT) . self::RESET;
-
-        $pathColour = match (true) {
-            $status >= 500 => self::RED,
-            $status >= 400 => self::ORANGE,
-            $status >= 300 => self::CYAN,
-            default        => self::WHITE,
-        };
-        $pathStr = $pathColour . $padUri . self::RESET;
-        $ipStr   = self::DIM . self::GREY . $ip . self::RESET;
-
-        echo sprintf(
-            "  %s  %s  %s  %s  %s   %s\n",
-            self::DIM . self::GREY . "[{$time}]" . self::RESET,
-            $methodBadge,
-            $statusStr,
-            $latencyStr,
-            $pathStr,
-            $ipStr
-        );
-    }
-
-    // ── Banner ───────────────────────────────────────────────────────
-
-    private function printBanner(string $url, string $root, bool $watchCss): void
-    {
-        $line = str_repeat('─', 56);
-
-        echo PHP_EOL;
-        echo self::BOLD . self::INDIGO . "  ⚡ IronFlow" . self::RESET . self::WHITE . "  Dev Server" . self::RESET . PHP_EOL;
-        echo self::GREY . "  {$line}" . self::RESET . PHP_EOL;
-        echo self::GREY . "  Local:    " . self::RESET . self::CYAN . self::BOLD . $url . self::RESET . PHP_EOL;
-        echo self::GREY . "  Root:     " . self::RESET . self::DIM . $root . self::RESET . PHP_EOL;
-        echo self::GREY . "  Engine:   " . self::RESET . self::DIM . 'PHP ' . PHP_VERSION . self::RESET . PHP_EOL;
-        if ($watchCss) {
-            echo self::GREY . "  CSS:      " . self::RESET . self::GREEN . '⟳ watching' . self::RESET . PHP_EOL;
-        }
-        echo self::GREY . "  {$line}" . self::RESET . PHP_EOL;
-        echo self::DIM . "  Press Ctrl+C to stop." . self::RESET . PHP_EOL . PHP_EOL;
-    }
-
-    // ── Colour maps ──────────────────────────────────────────────────
-
-    /** @return array{string, string} [background, foreground] */
-    private function methodColour(string $method): array
-    {
-        return match ($method) {
-            'GET'          => [self::BG_INDIGO, self::WHITE],
-            'POST'         => [self::BG_CYAN,   self::WHITE],
-            'PUT', 'PATCH' => [self::BG_YELLOW, self::WHITE],
-            'DELETE'       => [self::BG_RED,    self::WHITE],
-            default        => [self::BG_GREY,   self::WHITE],
-        };
-    }
-
-    private function statusColour(int $status): string
-    {
-        return match (true) {
-            $status >= 500 => self::RED,
-            $status >= 400 => self::ORANGE,
-            $status >= 300 => self::CYAN,
-            $status >= 200 => self::GREEN,
-            default        => self::GREY,
-        };
     }
 }

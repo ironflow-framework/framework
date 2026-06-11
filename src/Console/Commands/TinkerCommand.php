@@ -19,7 +19,6 @@ class TinkerCommand extends Command
 
     protected function handle(): int
     {
-        // Boot the application into the REPL scope
         $app = Application::getInstance();
 
         if (class_exists(\Psy\Shell::class)) {
@@ -43,9 +42,9 @@ class TinkerCommand extends Command
     private function runFallbackRepl(Application $app): int
     {
         $this->newLine();
-        $this->line('  <options=bold,fg=blue>IronFlow Tinker</> — Interactive REPL');
-        $this->line('  <fg=gray>Tip: install psy/psysh for a richer experience.</>');
-        $this->line('  <fg=gray>Type </><fg=yellow>exit</><fg=gray> or press Ctrl+D to quit.</>');
+        $this->output->writeln('   <options=bold;fg=blue>INFO</>  <options=bold>IronFlow Tinker</> — Interactive REPL');
+        $this->output->writeln('   <fg=gray>→</>  Install <fg=yellow>psy/psysh</> for a richer experience.');
+        $this->output->writeln('   <fg=gray>→</>  Type <fg=yellow>exit</> or press <options=bold>Ctrl+D</> to quit.');
         $this->newLine();
 
         if (!function_exists('readline')) {
@@ -53,7 +52,6 @@ class TinkerCommand extends Command
             return self::FAILURE;
         }
 
-        // Make $app available in eval scope
         $__app = $app;
 
         while (true) {
@@ -69,14 +67,12 @@ class TinkerCommand extends Command
 
             readline_add_history((string) $line);
 
-            // Wrap in a try/catch; support both expression and statement forms
             $code = trim((string) $line);
             if (!str_ends_with($code, ';') && !str_ends_with($code, '}')) {
                 $code .= ';';
             }
 
             try {
-                // Run in the current scope so $app/$__app are accessible
                 $__result = eval($code); // @phpstan-ignore-line
                 if ($__result !== null) {
                     $this->io->writeln(var_export($__result, true));

@@ -23,7 +23,6 @@ class MigrateCommand extends Command
         $path = $this->option('path') ?? base_path('database/migrations');
 
         if (!is_dir($path)) {
-            // Also look in modules
             $this->runAllModuleMigrations();
             return self::SUCCESS;
         }
@@ -34,9 +33,11 @@ class MigrateCommand extends Command
         if (empty($ran)) {
             $this->info('Nothing to migrate.');
         } else {
-            foreach ($ran as $migration) {
-                $this->success("Migrated: {$migration}");
+            $this->newLine();
+            foreach ($ran as $item) {
+                $this->migrationLine($item['file'], $item['ms']);
             }
+            $this->newLine();
         }
 
         return self::SUCCESS;
@@ -44,7 +45,7 @@ class MigrateCommand extends Command
 
     private function runAllModuleMigrations(): void
     {
-        $migrator = new Migrator($this->db);
+        $migrator    = new Migrator($this->db);
         $modulesPath = base_path('modules');
 
         if (!is_dir($modulesPath)) {
@@ -52,11 +53,22 @@ class MigrateCommand extends Command
             return;
         }
 
+        $any = false;
         foreach (glob($modulesPath . '/*/Database/Migrations') ?: [] as $path) {
             $ran = $migrator->run($path);
-            foreach ($ran as $m) {
-                $this->success("Migrated: {$m}");
+            if (!empty($ran) && !$any) {
+                $this->newLine();
+                $any = true;
             }
+            foreach ($ran as $item) {
+                $this->migrationLine($item['file'], $item['ms']);
+            }
+        }
+
+        if ($any) {
+            $this->newLine();
+        } else {
+            $this->info('Nothing to migrate.');
         }
     }
 }

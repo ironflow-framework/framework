@@ -6,6 +6,7 @@ namespace Ironflow\Auth;
 
 use Ironflow\Database\Connection;
 use Ironflow\Session\SessionManager;
+use Ironflow\Auth\Gate;
 
 /**
  * Manages multiple auth guards (session + jwt).
@@ -74,6 +75,15 @@ class AuthManager
             return $guard->createToken($user, $claims);
         }
         throw new \RuntimeException('JWT guard not configured.');
+    }
+
+    /**
+     * Return the authorization Gate (resolves from container).
+     * Convenience proxy so callers only need AuthManager injected.
+     */
+    public function gate(): Gate
+    {
+        return \Ironflow\Application::getInstance()->getContainer()->make(Gate::class);
     }
 
     private function createGuard(string $name): GuardInterface

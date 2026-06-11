@@ -47,6 +47,10 @@ class FrameworkExtension extends AbstractExtension implements GlobalsInterface
             new TwigFunction('has_error', [$this, 'funcHasError']),
             new TwigFunction('component', [$this, 'funcComponent'], $safe),
             new TwigFunction('dump', [$this, 'funcDump'], ['is_safe' => ['html'], 'needs_context' => true]),
+            new TwigFunction('session_flash', [$this, 'funcSessionFlash']),
+            new TwigFunction('can',    [$this, 'funcCan']),
+            new TwigFunction('cannot', [$this, 'funcCannot']),
+            new TwigFunction('gate',   [$this, 'funcGate']),
         ];
     }
 
@@ -191,6 +195,58 @@ class FrameworkExtension extends AbstractExtension implements GlobalsInterface
     public function funcHasError(string $key): bool
     {
         return !empty($this->funcErrors($key));
+    }
+
+    /** @var array<string, string|null> Per-request flash cache so repeated calls return the same value. */
+    private array $flashCache = [];
+
+    /**
+     * Read (and consume) a flash message from the session.
+     * Cached within the request so calling it multiple times (check + display) is safe.
+     *
+     * Usage: {% if session_flash('success') is not null %}
+     *        {% set msg = session_flash('success') %}
+     */
+    public function funcSessionFlash(string $type): ?string
+    {
+        if (array_key_exists($type, $this->flashCache)) {
+            return $this->flashCache[$type];
+        }
+
+        try {
+            $session = $this->container->make(\Ironflow\Session\SessionManager::class);
+            $value   = $session->pull($type);  // reads once and removes from session
+            $this->flashCache[$type] = $value !== null ? (string) $value : null;
+        } catch (\Throwable) {
+            $this->flashCache[$type] = null;
+        }
+
+        return $this->flashCache[$type];
+    }
+
+    /**
+     * Check if the current user has a Gate ability.
+     * Usage in Twig: {% if can('update', post) %} ... {% endif %}
+     */
+    public function funcCan(string $ability, mixed ...$arguments): bool
+    {
+        try {
+            $gate = $this->container->make(\Ironflow\Auth\Gate::class);
+            return $gate->allows($ability, empty($arguments) ? [] : $arguments);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    public function funcCannot(string $ability, mixed ...$arguments): bool
+    {
+        return !$this->funcCan($ability, ...$arguments);
+    }
+
+    /** Returns the Gate instance for advanced usage in templates. */
+    public function funcGate(): \Ironflow\Auth\Gate
+    {
+        return $this->container->make(\Ironflow\Auth\Gate::class);
     }
 
     public function funcDump(array $context, mixed ...$vars): string

@@ -36,7 +36,9 @@ class Migrator
             require_once $file;
 
             $migration = new $class();
+            $t0 = hrtime(true);
             $migration->up();
+            $ms = (int) round((hrtime(true) - $t0) / 1_000_000);
 
             $this->db->insert('migrations', [
                 'migration' => basename($file, '.php'),
@@ -44,7 +46,7 @@ class Migrator
                 'ran_at' => date('Y-m-d H:i:s'),
             ]);
 
-            $ran[] = basename($file);
+            $ran[] = ['file' => basename($file), 'ms' => $ms];
         }
 
         return $ran;
@@ -74,10 +76,12 @@ class Migrator
             require_once $file;
 
             $migration = new $class();
+            $t0 = hrtime(true);
             $migration->down();
+            $ms = (int) round((hrtime(true) - $t0) / 1_000_000);
 
             $this->db->statement('DELETE FROM migrations WHERE migration = ?', [$row['migration']]);
-            $rolledBack[] = $row['migration'];
+            $rolledBack[] = ['file' => basename($file), 'ms' => $ms];
         }
 
         return $rolledBack;
@@ -142,10 +146,17 @@ class Migrator
     {
         $name = basename($file, '.php');
         // Convert 2024_01_01_000000_create_posts_table → CreatePostsTable
-        $parts = explode('_', $name);
-        // Skip timestamp prefix (first 4 parts)
+        $parts      = explode('_', $name);
         $classParts = array_slice($parts, 4);
-        return implode('', array_map('ucfirst', $classParts));
+        $className  = implode('', array_map('ucfirst', $classParts));
+
+        // Prepend the namespace declared in the file (handles namespaced migrations)
+        $contents = file_get_contents($file);
+        if ($contents !== false && preg_match('/^\s*namespace\s+([^\s;]+)/m', $contents, $m)) {
+            return $m[1] . '\\' . $className;
+        }
+
+        return $className;
     }
 
     private function getLastBatch(): int

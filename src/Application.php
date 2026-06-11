@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Ironflow;
 
 use Ironflow\Auth\AuthManager;
+use Ironflow\Auth\Gate;
 use Ironflow\Cache\CacheManager;
 use Ironflow\Config\Repository as ConfigRepository;
+use Ironflow\Filesystem\Storage;
 use Ironflow\Console\Kernel as ConsoleKernel;
 use Ironflow\Container;
 use Ironflow\Events\Dispatcher;
@@ -149,6 +151,11 @@ class Application
         $this->config = new ConfigRepository();
         $this->container->instance(ConfigRepository::class, $this->config);
 
+        // Load core config files immediately so all services can read them
+        foreach (['app', 'database', 'logging', 'session', 'cache', 'auth', 'middleware', 'filesystems', 'rbac'] as $cfg) {
+            $this->configure($cfg);
+        }
+
         // Logger (Monolog-backed) — also bound as PSR-3 LoggerInterface
         $this->container->singleton(Logger::class, function () {
             return new Logger(
@@ -232,11 +239,33 @@ class Application
             $this->config->get('auth', [])
         ));
 
+        // Authorization Gate
+        $this->container->singleton(Gate::class, function () {
+            $gate        = new Gate(
+                $this->container->make(AuthManager::class),
+                $this->container
+            );
+            // Super-admin bypass: users with the configured role pass all Gate checks
+            $superAdmin  = $this->config->get('rbac.super_admin_role', 'admin');
+            if ($superAdmin) {
+                $gate->before(static function (object $user, string $ability) use ($superAdmin): ?bool {
+                    if (method_exists($user, 'hasRole') && $user->hasRole($superAdmin)) {
+                        return true;
+                    }
+                    return null;
+                });
+            }
+            return $gate;
+        });
+
         // Validator Factory (no-arg; resolves DB lazily via Application::getInstance())
         $this->container->singleton(ValidatorFactory::class, fn() => new ValidatorFactory());
 
         // View Component Registry
         $this->container->singleton(ComponentRegistry::class, fn() => new ComponentRegistry());
+
+        // Storage (static helper, registered so it can be type-hinted if needed)
+        $this->container->singleton(Storage::class, fn() => Storage::disk());
     }
 
     public function version(): string

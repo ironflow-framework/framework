@@ -32,6 +32,8 @@ class Container
     /** @var array<string, string[]> Exported bindings per module */
     private array $moduleExports = [];
 
+    /** @var array<string, true> Guards against self-referential factory recursion */
+    private array $building = [];
 
     /**
      * Cached constructor parameter lists, keyed by FQCN.
@@ -92,10 +94,16 @@ class Container
             return $this->instances[$abstract]; // @phpstan-ignore-line
         }
 
-        // Explicit binding
-        if (isset($this->bindings[$abstract])) {
-            $binding = $this->bindings[$abstract];
-            $result = ($binding['factory'])($this, $overrides);
+        // Explicit binding — skip if we're already inside this factory to break
+        // self-referential cycles (e.g. bind(X, X) creates fn($c) => $c->make(X))
+        if (isset($this->bindings[$abstract]) && !isset($this->building[$abstract])) {
+            $this->building[$abstract] = true;
+            try {
+                $binding = $this->bindings[$abstract];
+                $result  = ($binding['factory'])($this, $overrides);
+            } finally {
+                unset($this->building[$abstract]);
+            }
 
             if ($binding['singleton']) {
                 $this->instances[$abstract] = $result;
@@ -104,7 +112,7 @@ class Container
             return $result; // @phpstan-ignore-line
         }
 
-        // Auto-resolve via reflection
+        // Auto-resolve via reflection (also serves as fallback when $building is set)
         return $this->autoResolve($abstract, $overrides);
     }
 

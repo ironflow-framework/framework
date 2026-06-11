@@ -9,19 +9,20 @@ use Ironflow\Validation\ValidationException;
 use Ironflow\Validation\ValidatorFactory;
 
 /**
- * Base class for typed, auto-validated form/API requests.
+ * Base class for typed, auto-validated form / API requests.
  *
  * Usage:
  *   class StorePostRequest extends FormRequest {
  *       public function rules(): array { return ['title' => 'required|string']; }
  *   }
  *
- * When injected into a controller method the Router calls validateResolved()
- * automatically before the action runs.
+ * The Router calls validateResolved() automatically before the action runs.
+ * File uploads are included in validation data when the FormRequest is built
+ * from a real HTTP request via createFrom().
  */
 abstract class FormRequest extends Request
 {
-    private bool $isValidated = false;
+    private bool  $isValidated   = false;
     private array $validatedData = [];
 
     // ── Contract ──────────────────────────────────────────────────────
@@ -33,14 +34,19 @@ abstract class FormRequest extends Request
         return [];
     }
 
-    /** Override to add authorization logic. Return false → 403. */
+    /** Return false to abort with 403. */
     public function authorize(): bool
     {
         return true;
     }
 
-    /** Hook called before validation — mutate $this->merge() or skip fields. */
+    /** Hook called before validation — use merge() or unset fields. */
     public function prepareForValidation(): void
+    {
+    }
+
+    /** Called after successful validation. */
+    public function passedValidation(): void
     {
     }
 
@@ -62,19 +68,27 @@ abstract class FormRequest extends Request
 
         $this->prepareForValidation();
 
-        $data = $this->isJson() ? array_merge($this->all(), (array) $this->json()) : $this->all();
-        $factory = new ValidatorFactory();
+        // Merge text input, JSON body, and uploaded files
+        $textData  = $this->isJson() ? array_merge($this->all(), (array) $this->json()) : $this->all();
+        $data      = array_merge($textData, $this->allFiles());
+
+        $factory   = new ValidatorFactory();
         $validator = $factory->make($data, $this->rules(), $this->messages());
 
         if ($validator->fails()) {
             throw new ValidationException($validator);
         }
 
-        $this->isValidated = true;
+        $this->isValidated   = true;
         $this->validatedData = $validator->validated();
+
+        $this->passedValidation();
     }
 
-    /** Returns only the data that passed validation (throws if not yet validated). */
+    /**
+     * Returns only the data that passed validation.
+     * Calls validateResolved() if not yet done.
+     */
     public function validated(?string $key = null, mixed $default = null): mixed
     {
         if (!$this->isValidated) {
@@ -88,11 +102,19 @@ abstract class FormRequest extends Request
         return $this->validatedData;
     }
 
+    /**
+     * Merge extra data into the request's input bag (useful in prepareForValidation).
+     */
+    public function merge(array $data): void
+    {
+        $this->request->add($data);
+    }
+
     // ── Factory ───────────────────────────────────────────────────────
 
     /**
-     * Build a FormRequest subclass from an existing Request (used by the Router).
-     * Copies all parameter bags so route params, headers and body are preserved.
+     * Build a FormRequest subclass from an existing Request.
+     * Copies all parameter bags, including uploaded files.
      */
     public static function createFrom(Request $request): static
     {
@@ -102,7 +124,7 @@ abstract class FormRequest extends Request
             $request->request->all(),
             $request->attributes->all(),
             $request->cookies->all(),
-            [],                          // files — not needed for most validation
+            $request->files->all(),   // propagate uploaded files
             $request->server->all(),
             $request->getContent()
         );
